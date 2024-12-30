@@ -1,5 +1,4 @@
 ![SpotifyMate Logo](https://github.com/Harry-Skerritt/SpotifyMate/blob/main/assets/sm_logo_full.png)
-# Spotify Mate
 ## What is SpotifyMate?
 Spotify Mate is a device which uses Spotifys WebAPI to give visuals as to what you are currently listening to. Aswell as some functionality to Play, Pause, Skip Forward, Skip Backwards, Add to liked songs and adjust the volume. The device also has one customisable button which can be used for things such as playing a specific playlist for example.
 Some Renders of the Hardware side will be added soon, and some images of the fireware GUI will also be added soon.
