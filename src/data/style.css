@@ -1,0 +1,168 @@
+@font-face {
+    font-family: Metropolis-Bold;
+    src: url('fonts/Metropolis-Bold.otf');
+}
+
+@font-face {
+    font-family: Metropolis-Regular;
+    src: url('fonts/Metropolis-Regular.otf');
+}
+
+@font-face {
+    font-family: Metropolis-Light;
+    src: url('fonts/Metropolis-Light.otf');
+}
+
+body{
+    background: #121212;
+}
+
+.main_title{
+    color: #ffffff;
+    font-family: Metropolis-Regular;
+    font-size: 48px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 295px;
+    margin-bottom: 0;
+}
+
+.main_title_1{
+    color:#1ed760;
+}
+
+.connected_device_h{
+    color:#ffffff;
+    font-family: Metropolis-Regular;
+    font-size: 12px;
+    width: 276px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 3%;
+}
+
+.device_name{
+    color: #1ed760;
+    font-family: Consolas,monaco,monospace;
+}
+
+.network_connect{
+    background-color: #1e1e1e;
+    border-radius: 15px;
+    width: 340px;
+    height: 255px;
+    padding-top: 5px;
+    padding-left: 25px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 5%;
+    display: block;
+}
+
+.network_title{
+    color: #ffffff;
+    font-family: Metropolis-Light;
+    font-size: 24px;
+    width: 292px; 
+    margin: 0;
+    padding: auto;
+    margin-left: 5%;
+
+    align-content: center;
+    margin-top: 10px;
+    display: grid;
+}
+
+.ssid_title{
+    color:#ffffff;
+    font-size: 14px;
+    font-family: Consolas,monaco,monospace;
+    margin: 0px;
+    margin-top: 16px;
+    margin-bottom: 7px;
+}
+
+.pass_title{
+    color:#ffffff;
+    font-size: 14px;
+    font-family: Consolas,monaco,monospace;
+    margin: 0px;
+    margin-top: 16px;
+    margin-bottom: 7px;
+}
+
+.network_field{
+    background-color: #424242;
+    border-radius: 50px;
+    width: 299px;
+    height: 20px;
+    margin: 0;
+    padding-left: 10px;
+    font-family: monospace;
+    color:#ffffff;
+}
+
+.connect_button{
+    background-color: #1ed760;
+    width: 150px;
+    height: 40px;
+    border-radius: 50px;
+    border: none;
+    color:#ffffff;
+    font-size: 22px;
+    font-family: Metropolis-Light;
+    margin: 0;
+    margin-top: 7%;
+    margin-left: 23%;
+    cursor: pointer;
+}
+
+.connected_status{
+    color: #1ed760;
+    font-family: Metropolis-Regular;
+    font-size: 20px;
+    width: 89px;
+    text-align: center;
+    margin: 0;
+    margin-top: 25px;
+    margin-bottom: 25px;
+    margin-left: auto;
+    margin-right: auto;
+
+}
+
+.sp_button{
+    background-color: #121212;
+    border: none;
+    text-decoration: none;
+}
+
+.connect_spotify_button{
+    margin-top: 20px;
+    margin-left: 15px;
+    width: 250px;
+    height: 50px;
+    background-color: #1ed760;
+    border-radius: 50px;
+    display: flex;
+    margin: 0;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 20px;
+}
+
+.spotify_img{
+    margin-left: 6px;
+    margin-top: 5px;
+
+}
+
+.connect_text{
+    font-family: Metropolis-Regular;
+    color: #121212;
+    font-size: 20px;
+    margin-left: 10px;
+    margin-top: 0px;
+    margin-top: auto;
+    margin-bottom: auto;
+}
