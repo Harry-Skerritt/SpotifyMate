@@ -4,6 +4,8 @@
 
 #include <Preferences.h>
 #include <CaptivePortal.h>
+#include <Networking.h>
+#include <Processes.h>
 
 // Captive Portal
 #include <AsyncTCP.h>  //https://github.com/me-no-dev/AsyncTCP using the latest dev version from @me-no-dev
@@ -14,10 +16,7 @@
 
 Preferences pref;
 
-// Pre reading on the fundamentals of captive portals https://textslashplain.com/2022/06/24/captive-portals/
 
-//const char *ssid = "SpotifyMate-AP0001";  // FYI The SSID can't have a space in it.
-// const char * password = "12345678"; //Atleast 8 chars
 const char *password = NULL;  // no password
 
 #define MAX_CLIENTS 4	// ESP32 supports up to 10 but I have not tested it yet
@@ -31,6 +30,7 @@ const String localIPURL = "http://4.3.2.1";	 // a string version of the local IP
 
 const char* SSID_PARAM = "network-ssid";
 const char* PASS_PARAM = "network-password";
+const char* SPOTIFY_PARAM = "spotify_connect";
 
 const char index_html[] PROGMEM = R"=====(
 <!DOCTYPE html>
@@ -43,7 +43,7 @@ const char index_html[] PROGMEM = R"=====(
 <body>
 
     <h1 class="main_title">Spotify <span class="main_title_1">Mate</span></h1>
-    <h2 class="connected_device_h">Currently Connected to: <span class="device_name">SpotifyMate-AP0001</span></h2>
+    <h2 class="connected_device_h">Currently Connected to: <span class="device_name">SpotifyMate-AP4562</span></h2>
 
     <div class="network_connect">
         <h1 class="network_title">Connect to your network</h1>
@@ -55,23 +55,13 @@ const char index_html[] PROGMEM = R"=====(
             <p class="pass_title">Password</p>
             <input id="pass" class="network_field" placeholder="Password" type="password" name="network-password"/> 
 
-            <input type="submit" class="connect_button">Connect!</input>
+            <input type="submit" class="connect_button" value="Connect!"/>
 
         </form>
 
 
 
     </div>
-
-    <p class="connected_status"></p>
-
-    <a href="https://www.spotify.com" class="sp_button">
-        <div class="connect_spotify_button">
-            <img class="spotify_img", src="./data/spotify.png", alt="Spotify Logo", width="40", height="40"/>
-            <h1 class="connect_text">Connect to Spotify</h1>
-        </div>
-    </a>
-
 </body>
 
 <style>
@@ -207,11 +197,28 @@ body{
     margin-right: auto;
 
 }
+</style>
 
-.sp_button{
-    background-color: #121212;
-    border: none;
-    text-decoration: none;
+</html> 
+)=====";
+
+const char spotify_html[] PROGMEM = R"=====(
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>SpotifyMate Connect</title>
+</head>
+
+<body>
+    <form action="/get">
+        <input type="submit" class="connect_spotify_button" value="Connect to Spotify" name="spotify_connect"/>
+    </form>
+</body>
+
+<style>
+body{
+    background: #121212;
 }
 
 .connect_spotify_button{
@@ -226,26 +233,12 @@ body{
     margin-left: auto;
     margin-right: auto;
     margin-top: 20px;
-}
-
-.spotify_img{
-    margin-left: 6px;
-    margin-top: 5px;
-
-}
-
-.connect_text{
-    font-family: Metropolis-Regular;
     color: #121212;
-    font-size: 20px;
-    margin-left: 10px;
-    margin-top: 0px;
-    margin-top: auto;
-    margin-bottom: auto;
+    font-size: 22px;
+    font-family: monospace, sans-serif;
 }
 </style>
-
-</html> 
+</html>
 )=====";
 
 DNSServer dnsServer;
@@ -325,59 +318,62 @@ void setUpWebserver(AsyncWebServer &server, const IPAddress &localIP) {
 		Serial.println("Served Basic HTML Page");
 	});
 
-  server.on("/get", HTTP_GET, [](AsyncWebServerRequest *request) {
-    String network_ssid_msg;
-    String network_ssid_param;
+    server.on("/get", HTTP_GET, [](AsyncWebServerRequest *request) {
+        String network_ssid_msg;
+        String network_ssid_param;
 
-    String network_pass_msg;
-    String network_pass_param;
+        String network_pass_msg;
+        String network_pass_param;
 
-    bool ssid_got = false;
-    bool pass_got = false;
+        bool ssid_got = false;
+        bool pass_got = false;
 
-    //Get SSID
-    if(request->hasParam(SSID_PARAM)) {
-      network_ssid_msg = request->getParam(SSID_PARAM)->value();
-      network_ssid_param = SSID_PARAM;
-      ssid_got = true;
-    } else {
-      network_ssid_msg = "No message sent";
-      network_ssid_param = "none";
-    }
+        //Get SSID
+        if(request->hasParam(SSID_PARAM)) {
+          network_ssid_msg = request->getParam(SSID_PARAM)->value();
+          network_ssid_param = SSID_PARAM;
+          ssid_got = true;
+        } else {
+            network_ssid_msg = "No message sent";
+            network_ssid_param = "none";
+        }
 
-    //Get Pass
-    if(request->hasParam(PASS_PARAM)) {
-      network_pass_msg = request->getParam(PASS_PARAM)->value();
-      network_pass_param = PASS_PARAM;
-      pass_got = true;
-    } else {
-      network_pass_msg = "No message sent";
-      network_pass_param = "none";
-    }
+        //Get Pass
+        if(request->hasParam(PASS_PARAM)) {
+            network_pass_msg = request->getParam(PASS_PARAM)->value();
+            network_pass_param = PASS_PARAM;
+            pass_got = true;
+        } else {
+            network_pass_msg = "No message sent";
+            network_pass_param = "none";
+        }
 
-    Serial.println("### SSID:" + network_ssid_msg);
-    Serial.println("### PASS:" + network_pass_msg);
+        Serial.println("### SSID:" + network_ssid_msg);
+        Serial.println("### PASS:" + network_pass_msg);
 
-    pref.begin("spotify-mate", false);
-    pref.putString("ssid", network_ssid_msg);
-    pref.putString("pass", network_pass_msg);
-    pref.end();
+        pref.begin("spotify-mate", false);
+        pref.putString("ssid", network_ssid_msg);
+        pref.putString("pass", network_pass_msg);
+        pref.end();
 
-    if(ssid_got && pass_got){
-      //Both the SSID and Password are gotten
-      //Connect to network
-      Serial.println("Attempting Network Connection");
-    } else {
-      //Do not connect to network
-      //Display error message
-      Serial.println("Could not attempt network Connection");
-    }
 
-    //ToDo: Change this to send the HTML to connect to spotify
-    request->send(200, "text/html", "HTTP GET request sent to your ESP on input field (" 
-                                     + network_pass_param + ") with value: " + network_pass_msg +
-                                     "<br><a href=\"/\">Return to Home Page</a>");
-  });
+        if(ssid_got && pass_got){
+            //Both the SSID and Password are gotten
+            Serial.println("Attempting Network Connection");
+            WiFi.enableAP(false);
+            WiFi.mode(WIFI_MODE_STA); //Should end the captive portal
+            connectToWifi(network_ssid_msg, network_pass_msg);
+            //Host Webserver
+        } else {
+            //Do not connect to network
+            //Display error message
+            Serial.println("Could not attempt network Connection");
+        }
+
+        //ToDo: Change this to send the HTML to connect to spotify
+        request->send(200, "text/html", "Connected!");
+        
+    });
 
 	// the catch all
 	server.onNotFound([](AsyncWebServerRequest *request) {

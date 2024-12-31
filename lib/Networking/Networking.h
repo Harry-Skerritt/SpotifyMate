@@ -8,5 +8,7 @@ void connectToWifi(String ssid, String pass);
 
 IPAddress getIp();
 
+bool getConnected();
+
 
 #endif

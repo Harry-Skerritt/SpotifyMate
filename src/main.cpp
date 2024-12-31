@@ -23,6 +23,8 @@
 
 
 void setup() {
+    removeNetCreds(); //DEBUG TO RESET
+
     const char* ssid = "SpotifyMate-AP4562";
     IPAddress local_ip;
     Serial.begin(115200);
@@ -30,18 +32,42 @@ void setup() {
     initialiseGraphics(); //Initialise the Graphical elements
 
     startupGraphics("Starting Up...");
+    delay(500);
 
+    startupGraphics("Getting Credentials...");
+    getSpotifyCreds();
+    delay(500);
+
+    startupGraphics("Getting Preferences...");
     getPreferences();
+
 
     String ssid_got = get_ssid();
     String pass_got = get_pass();
 
     Serial.println(ssid_got + " | " + pass_got);
-    delay(2000);
+    delay(1000);
 
     if(ssid_got == "null" || pass_got == "null"){
         captiveGraphics(ssid);
         startCaptiveProcess(ssid);
+        bool wifiConnected = getConnected();
+        while(!wifiConnected){
+            wifiConnected = getConnected();
+            startupGraphics("Connecting...");
+        }
+        if(wifiConnected){
+            startupGraphics("Connecting.");
+            delay(50);
+            startupGraphics("Connecting..");
+            delay(50);
+            startupGraphics("Connecting...");
+            delay(50);
+            
+            startupGraphics("Local IP: " + local_ip.toString());
+            authSpotify();
+        }
+        //Add handling for incorrect creds
     } else {
         Serial.println("Not Null");
         startupGraphics("Connecting to Network...");
