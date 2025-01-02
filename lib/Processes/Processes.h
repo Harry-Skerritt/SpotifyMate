@@ -1,18 +1,14 @@
 #ifndef PROCESSES_H
 #define PROCESSES_H
 
-bool getPreferences();
-
-void removeNetCreds();
-
-String get_ssid();
-String get_pass();
-
-void setSpotifyCreds();
-void getSpotifyCreds();
+void read_in_keys_spiffs();
 
 void authSpotify();
 
+bool hasRefreshToken();
 
+std::array<String, 3> getCurrentSongDetails();
+
+void downloadFile(uint8_t * imgA);
 
 #endif

@@ -1,86 +1,107 @@
-//Check if network creds
-//If so attempt connection
-//If not lauch captive portal
-//Get Creds
-//Loop
-
-//On start display splash screen and loading whilst checking network creds and/or attempting connection
-//If captive displayed then show how to use on the screen
-//Display network connecting
-//Go to home (temp for now)
-
-//On Very Very First Launch
-//Generate a settings file
-//Generate a random 5 digit number - the device identifier
-//Put that identifier in the settings in the form of a name
-//This is also where the wifi credentials will be stored
-
+#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include <Arduino.h>
 #include <Graphics.h>
-#include <Processes.h>
-#include <Networking.h>
+#include <array>
+#include <ESPmDNS.h>
+#include <Spotify.h>
 
+//Spotify Related
+#include <Wifi.h>
+#include <WebServer.h>
+#include <WiFiClient.h>
+#include <WiFiClientSecure.h>
 
+#include <SpotifyArduino.h> //https://github.com/witnessmenow/spotify-api-arduino/tree/main
+#include <SpotifyArduinoCert.h> //https://github.com/witnessmenow/spotify-api-arduino/tree/main
+#include <ArduinoJson.h>
+
+WiFiManager wm;
 
 void setup() {
-    removeNetCreds(); //DEBUG TO RESET
-
-    const char* ssid = "SpotifyMate-AP4562";
-    IPAddress local_ip;
     Serial.begin(115200);
 
+    //startSpiffs();
+
+    //Debug
+    pinMode(23, INPUT_PULLUP);
+
+    if(digitalRead(23) == LOW) {
+       // wm.resetSettings();
+        sp_getCurrentSong();
+    }
+    //Not Debug
+
+    const char* ssid = "SpotifyMate-AP";
+    const String hostname = "spotify-mate";
     initialiseGraphics(); //Initialise the Graphical elements
-
     startupGraphics("Starting Up...");
-    delay(500);
-
-    startupGraphics("Getting Credentials...");
-    getSpotifyCreds();
-    delay(500);
-
-    startupGraphics("Getting Preferences...");
-    getPreferences();
-
-
-    String ssid_got = get_ssid();
-    String pass_got = get_pass();
-
-    Serial.println(ssid_got + " | " + pass_got);
     delay(1000);
 
-    if(ssid_got == "null" || pass_got == "null"){
-        captiveGraphics(ssid);
-        startCaptiveProcess(ssid);
-        bool wifiConnected = getConnected();
-        while(!wifiConnected){
-            wifiConnected = getConnected();
-            startupGraphics("Connecting...");
+    startupGraphics("Getting Credentials...");
+    //read_in_keys_spiffs();
+    delay(500);
+
+    WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STA+AP    
+    
+    
+    //Start Wifi Manager (for Provisioning)
+    wm.setHostname("SpotifyMate");
+    wm.setConnectRetries(4);
+
+    wm.setConfigPortalBlocking(false);
+    wm.setConfigPortalTimeout(240);
+    wm.setConnectTimeout(20);
+
+    startupGraphics("Connecting to WiFi...");
+    delay(500);
+
+    //automatically connect using saved credentials if they exist
+    //If connection fails it starts an access point with the specified name
+    if(wm.autoConnect(ssid)){
+        //Connected to Wifi
+        Serial.println("Connected to Wifi!!");
+        startupGraphics("WiFi Connected!");
+
+
+        //Need to handle refresh token.
+
+        //mDNS Setup
+        if(!MDNS.begin(hostname)) {
+            Serial.println("Error setting up MDNS responder");
+            while(1){
+                delay(1000);
+            }
         }
-        if(wifiConnected){
-            startupGraphics("Connecting.");
-            delay(50);
-            startupGraphics("Connecting..");
-            delay(50);
-            startupGraphics("Connecting...");
-            delay(50);
-            
-            startupGraphics("Local IP: " + local_ip.toString());
-            authSpotify();
+        Serial.println("mDNS responder started");
+
+        //Spotify Get Access Token
+        refreshAccessToken();
+
+        //sp_getCurrentSong();
+
+        
+        if(true){
+            //No refresh token
+            spotifyConnectScreen(hostname + ".local");
+            //authSpotify();
+        } else {
+            //Spotify Authed
+            startupGraphics("Spotify Connected!");
         }
-        //Add handling for incorrect creds
-    } else {
-        Serial.println("Not Null");
-        startupGraphics("Connecting to Network...");
-        connectToWifi(ssid_got, pass_got);
-        local_ip = getIp();
-        startupGraphics("Local IP: " + local_ip.toString());
+
+        
+        
     }
-
-
-
-
+    else {
+        Serial.println("Configportal running");
+        captiveGraphics(ssid);
+        //Not Connected to Wifi
+    }
 }
 
 void loop() {
-
+    wm.process();
+    ratLoop();
+    //Serial.println("SS: "+wm.getWLStatusString());
+    // put your main code here, to run repeatedly:
 }
