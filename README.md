@@ -12,19 +12,6 @@
 [![ESP32](https://img.shields.io/badge/ESP-32-000000?labelColor=%23CC101F)](https://www.espressif.com/en/products/socs/esp32)
 
 
-
-![Dev Badge](https://img.shields.io/badge/IN_DEVELOPMENT-green)
-
-
-![Release Badge](https://img.shields.io/badge/Release-Pending-blue)
-
-![Beta Badge](https://img.shields.io/badge/beta-v1.0.0-dark_green)
-
-![PlatformIO Badge](https://img.shields.io/badge/Built_with-PlatformIO-orange)
-
-[![ESP32](https://img.shields.io/badge/ESP-32-000000?labelColor=%23CC101F)](https://www.espressif.com/en/products/socs/esp32)
-
-
 ## What is SpotifyMate?
 Spotify Mate is a device which uses Spotifys WebAPI to give visuals as to what you are currently listening to. Aswell as some functionality to Play, Pause, Skip Forward, Skip Backwards, Add to liked songs and adjust the volume. The device also has one customisable button which can be used for things such as playing a specific playlist for example.
 
