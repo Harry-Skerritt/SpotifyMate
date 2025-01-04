@@ -71,7 +71,7 @@ void setup() {
         }
         Serial.println("mDNS responder started");
 
-        drawCurrentPlaying("The Number of the Beast", "Iron Maiden", "https://i.scdn.co/image/ab67616d000048515c29a88ba5341ca428f0c322", "27000", "12500", "harry_skerritt");
+        drawCurrentPlaying("The Number of the Beast", "Iron Maiden", "https://i.scdn.co/image/ab67616d000048515c29a88ba5341ca428f0c322", "279210", "431093", "harry_skerritt");
         //delay(2000);
 
         //spotifyConnectScreen();

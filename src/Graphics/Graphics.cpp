@@ -8,7 +8,7 @@
 #include <JPEGDecoder.h>
 #include <SpotifyAuth.h>
 #include <qrcode.h>
-#include <Buttons.h>           //Button Images
+#include <smLogo.h>
 
 TFT_eSPI tft = TFT_eSPI(); //Create the screen
 
@@ -21,21 +21,6 @@ int32_t toInt(int r, int g, int b) {
 //Spotify Black 18 18 18
 //Spotify White 255, 255, 255
 //Spotify Green 30 215 96
-
-bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t* bitmap)
-{
-   // Stop further decoding as image is running off bottom of screen
-  if ( y >= tft.height() ) return 0;
-
-  // This function will clip the image block rendering automatically at the TFT boundaries
-  tft.pushImage(x, y, w, h, bitmap);
-
-  // This might work instead if you adapt the sketch to use the Adafruit_GFX library
-  // tft.drawRGBBitmap(x, y, bitmap, w, h);
-
-  // Return 1 to decode next block
-  return 1;
-}
 
 void initialiseGraphics() {
 
@@ -51,21 +36,7 @@ void initialiseGraphics() {
     //TJpgDec.setCallback(tft_output);
 
     //Temp
-    tft.setRotation(1);
-    tft.fillScreen(toInt(30, 215, 96));
-    delay(200);
-    tft.fillScreen(TFT_BLACK);
-    delay(200);
-    tft.fillScreen(TFT_RED);
-    delay(200);
-    tft.fillScreen(TFT_BLUE);
-    delay(200);
-    tft.fillScreen(TFT_GREEN);
-    delay(200);
-    tft.fillScreen(TFT_WHITE);
-    delay(200);
-    tft.fillScreen(TFT_BLACK);
-    delay(200);
+    tft.setRotation(0); //Portrait
 }
 
 void startupGraphics(String msg) {
@@ -73,19 +44,20 @@ void startupGraphics(String msg) {
 
 
     tft.setTextColor(TFT_WHITE);
-    tft.setTextSize(5);
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("Spotify", (tft.width() / 2)-65, tft.height() / 2);
+    tft.setTextSize(3.2);
+    tft.setTextDatum(TL_DATUM);
+    tft.drawString("Spotify", 9, 46);
 
 
     tft.setTextColor(toInt(30, 215, 96));
-    tft.setTextSize(5);
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("Mate", (tft.width() / 2) + 110, tft.height() / 2);
+    tft.setTextSize(3.2);
+    tft.setTextDatum(TR_DATUM);
+    tft.drawString("Mate", (tft.width() - 9), 46);
 
+    tft.pushImage(130, 90, 60, 60, sm_logo);
 
     tft.setTextColor(TFT_WHITE);
-    tft.setTextSize(2);
+    tft.setTextSize(1.25);
     tft.setTextDatum(MC_DATUM);
     tft.drawString(msg, tft.width() / 2, 250);
 
@@ -96,41 +68,43 @@ void captiveGraphics(const char *ssid) {
 
 
     tft.setTextColor(TFT_WHITE);
-    tft.setTextSize(5);
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("Spotify", (tft.width() / 2)-65, 30);
+    tft.setTextSize(3.2);
+    tft.setTextDatum(TL_DATUM);
+    tft.drawString("Spotify", 9, 12);
 
 
     tft.setTextColor(toInt(30, 215, 96));
-    tft.setTextSize(5);
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("Mate", (tft.width() / 2) + 110, 30);
+    tft.setTextSize(3.2);
+    tft.setTextDatum(TR_DATUM);
+    tft.drawString("Mate", (tft.width() - 9), 12);
 
     tft.setTextColor(toInt(255, 255, 255));
-    tft.setTextSize(2);
+    tft.setTextSize(1);
 
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("Welcome to SpotifyMate", (tft.width() /2), 90);
+    tft.setTextDatum(TC_DATUM);
+    tft.drawString("Welcome to SpotifyMate", (tft.width() /2), 59);
 
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("Open WiFi settings on your phone,", (tft.width() / 2), 120);
+    tft.setTextDatum(TC_DATUM);
+    tft.drawString("Open WiFi settings on your phone,", (tft.width() / 2), 87);
 
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("and connect to:", (tft.width() / 2), 150);
+    tft.setTextDatum(TC_DATUM);
+    tft.drawString("and connect to:", (tft.width() / 2), 100);
 
     tft.setTextColor(toInt(30, 215, 96));
-    tft.setTextSize(4);
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString(ssid, tft.width()/2, (tft.height()/2) + 40);
+    tft.setTextSize(2.5);
+    tft.setTextDatum(TC_DATUM);
+    tft.drawString(ssid, tft.width()/2, 137);
 
     tft.setTextColor(toInt(255, 255, 255));
-    tft.setTextSize(2);
+    tft.setTextSize(1);
 
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("Follow the instructions to connect", (tft.width() / 2), 250);
+    tft.setTextDatum(TC_DATUM);
+    tft.drawString("Follow the instructions to connect to", (tft.width() / 2), 184);
 
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("to your network. The device will restart!", (tft.width() / 2), 280);
+    tft.setTextDatum(TC_DATUM);
+    tft.drawString("your network. The device will restart!", (tft.width() / 2), 194);
+
+    //Logo??
 
 }
 
@@ -209,7 +183,7 @@ void displayAlbumArt(String albumArtUrl) {
       // Decode the JPEG from the buffer
       if (JpegDec.decodeArray(imgBuffer, bytesRead)) {
         Serial.println("JPEG decoded successfully!");
-        renderJPEG(8, 8); // Render the image on the TFT screen
+        renderJPEG(24, 10); // Render the image on the TFT screen
       } else {
         Serial.println("Failed to decode JPEG.");
       }
@@ -245,14 +219,26 @@ int convertMillisMin(String millis_s){
 
 }
 
-//'Helper' Functions
-void mirrorImageHorizontally(const uint16_t* src, uint16_t* dest, int width, int height) {
-  for (int y = 0; y < height; y++) {
-    for (int x = 0; x < width; x++) {
-      // Reverse the horizontal position of each pixel
-      dest[y * width + (width - 1 - x)] = src[y * width + x];
-    }
-  }
+// Draw the progress bar
+void drawProgressBar(int x, int y, int width, int height, int currentTime, int duration) {
+  // Calculate progress percentage
+  float progress = (float)currentTime / duration;
+
+  // Ensure progress is clamped between 0.0 and 1.0
+  if (progress < 0.0) progress = 0.0;
+  if (progress > 1.0) progress = 1.0;
+
+  // Calculate the filled width based on progress
+  int filledWidth = progress * width;
+
+  // Draw the background of the progress bar
+  tft.fillRect(x, y, width, height, toInt(24, 24, 24));
+
+  // Draw the filled portion of the progress bar
+  tft.fillRect(x, y, filledWidth, height, toInt(30, 215, 96));
+  
+  // Optionally, draw a border around the progress bar
+  tft.drawRect(x, y, width, height, TFT_WHITE);
 }
 
 // Function to wrap text within a specified width
@@ -285,7 +271,7 @@ void wrapText(const char* text, int x, int y, int maxWidth) {
 
 String currentlyPlayingURL = "";
 
-void drawCurrentPlaying(String title, String artist, String url, String duration_ms, String progress_ms, String account_name, bool playing, bool liked){
+void drawCurrentPlaying(String title, String artist, String url, String progress_ms, String duration_ms, String account_name, bool playing, bool liked){
   Serial.begin(115200);
   //Get duration in terms of minutes and seconds
   int progress_s = convertMillisSec(progress_ms);
@@ -310,74 +296,31 @@ void drawCurrentPlaying(String title, String artist, String url, String duration
   }
 
 
-  //Draw account name
- // tft.pushImage(218, 11, 20, 20, spotify_logo);
-  //tft.setTextColor(0xffff);
-  //tft.setTextSize(3);
-  //tft.drawString(account_name.c_str(), 248, 11);
-
-  //Draw volume knob decal
-
   //Draw Song Name
   tft.setTextColor(TFT_WHITE);
-  tft.setTextSize(3);
-  tft.setTextDatum(BL_DATUM);
-  tft.drawString(title.c_str(), 218, 160);
-  wrapText(title.c_str(), 218, 140, 168);
-
-  tft.setTextColor(TFT_WHITE);
   tft.setTextSize(2);
-  tft.setTextDatum(BL_DATUM);
-  tft.drawString(artist.c_str(), 218, 200);
+  tft.setTextDatum(TC_DATUM);
+  tft.drawString(title.c_str(), tft.width()/2, 206);
+  //wrapText(title.c_str(), tft.width()/2, 206, 128);
+
+  tft.setTextColor(toInt(155, 155, 155));
+  tft.setTextSize(2);
+  tft.setTextDatum(TC_DATUM);
+  tft.drawString(artist.c_str(), tft.width()/2, 256);
 
   //Draw progress bar
+  tft.setTextColor(toInt(255, 255, 255));
+  tft.setTextSize(1);
+
+  tft.setTextDatum(TL_DATUM);
+  tft.drawString(String(progress_m + ":"+ progress_s).c_str(), 10, 280); //Progress
+
+  tft.setTextDatum(TR_DATUM);
+  tft.drawString(String(duration_m + ":"+ duration_s).c_str(), (tft.width()-10), 280); //Duration
+  
+  //Actual Bar
+  drawProgressBar(10, 298, 220, 12, progress_ms.toInt(), duration_ms.toInt());
 
 
 
-
-  //Draw buttons
-  int button_width = 32;
-  int button_height = 32;
-
-  //Playlist
-
-  //Skip Backwards
-  uint16_t mirroredNav[button_width * button_height];
-  mirrorImageHorizontally(button_nav, mirroredNav, button_width, button_height);
-  tft.pushImage((tft.width()/2) - 113, 270, button_width, button_height, mirroredNav);
-
-  //Play Pause
-  if(playing){
-    //Music is Playing (Display Pause)
-    tft.pushImage((tft.width()/2) - 16, 270, button_width, button_height, button_pause);
-  } else {
-    //Music is not playing (Display Play)
-    tft.pushImage((tft.width()/2) - 16, 270, button_width, button_height, button_play);
-  }
-
-  //Skip Forward
-  tft.pushImage((tft.width()/2) + 97, 270, button_width, button_height, button_nav);
-
-  //Like/Add Song
-  if(liked){
-    //Song is liked (Green Tick)
-    //size_t pixelCount = sizeof(button_liked_song) / sizeof(button_liked_song[0]);
-    //swapImageEndianness(button_liked_song, pixelCount);
-
-    tft.pushImage((tft.width()/2) + 191 , 270, button_width, button_height, button_liked_song);
-  } else {
-    //Song is unliked (Plus)
-    tft.pushImage((tft.width()/2) + 191, 270, button_width, button_height, button_liked_song);
-  }
-
-  //Draw button arrows (ButtonIdentifiers.h)
-  int imageWidth = 40;
-  int imageHeight = 15;
-  int pixelCount = imageWidth * imageHeight;
-
-  tft.pushImage(17, 303, imageWidth, imageHeight, button_identifier_arrow); //PL
-  tft.pushImage((tft.width()/2) - 20, 303, imageWidth, imageHeight, button_identifier_arrow); //PP
-  tft.pushImage((tft.width()/2) - 117, 303, imageWidth, imageHeight, button_identifier_arrow); //SB
-  tft.pushImage((tft.width()/2) + 93, 303, imageWidth, imageHeight, button_identifier_arrow); //SF
-  tft.pushImage((tft.width()/2) + 187, 303, imageWidth, imageHeight, button_identifier_arrow); //AS
 }
