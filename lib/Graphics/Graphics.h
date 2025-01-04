@@ -7,8 +7,12 @@ void startupGraphics(String msg);
 
 void captiveGraphics(const char *ssid);
 
-void spotifyConnectScreen(String hostname);
+void spotifyConnectScreen();
 
 bool displayOutput(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t *bitmap);
+
+void displayImageFromURL(const char* url);
+
+void drawCurrentPlaying(String title, String artist, String url, String duration_ms, String progress_ms, String account_name, bool playing = true, bool liked = false); //Remove the hc 
 
 #endif

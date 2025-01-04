@@ -3,39 +3,36 @@
 #include <Graphics.h>
 #include <array>
 #include <ESPmDNS.h>
-#include <Spotify.h>
+#include <SpotifyAuth.h>
+
+#include <esp_heap_caps.h>
 
 //Spotify Related
 #include <Wifi.h>
-#include <WebServer.h>
-#include <WiFiClient.h>
-#include <WiFiClientSecure.h>
+//#include <WebServer.h>
+//#include <WiFiClient.h>
+//#include <WiFiClientSecure.h>
 
-#include <SpotifyArduino.h> //https://github.com/witnessmenow/spotify-api-arduino/tree/main
-#include <SpotifyArduinoCert.h> //https://github.com/witnessmenow/spotify-api-arduino/tree/main
-#include <ArduinoJson.h>
+//#include <SpotifyArduino.h> //https://github.com/witnessmenow/spotify-api-arduino/tree/main
+//#include <SpotifyArduinoCert.h> //https://github.com/witnessmenow/spotify-api-arduino/tree/main
+//#include <ArduinoJson.h>
 
 WiFiManager wm;
 
 void setup() {
     Serial.begin(115200);
+    //Serial.begin(esp_get_free_heap_size());
 
     //startSpiffs();
-
-    //Debug
-    pinMode(23, INPUT_PULLUP);
-
-    if(digitalRead(23) == LOW) {
-       // wm.resetSettings();
-        sp_getCurrentSong();
-    }
-    //Not Debug
 
     const char* ssid = "SpotifyMate-AP";
     const String hostname = "spotify-mate";
     initialiseGraphics(); //Initialise the Graphical elements
     startupGraphics("Starting Up...");
     delay(1000);
+
+    
+    
 
     startupGraphics("Getting Credentials...");
     //read_in_keys_spiffs();
@@ -74,20 +71,28 @@ void setup() {
         }
         Serial.println("mDNS responder started");
 
+        drawCurrentPlaying("The Number of the Beast", "Iron Maiden", "https://i.scdn.co/image/ab67616d000048515c29a88ba5341ca428f0c322", "27000", "12500", "harry_skerritt");
+        //delay(2000);
+
+        //spotifyConnectScreen();
+        //Now on WiFi
+        //Check if connected to spotify
+        //  If So then get the track
+        //  If not then auth spotify
+
         //Spotify Get Access Token
-        refreshAccessToken();
+        //authSpotify();
+  
+        //If this works, then make it get the artist aswell and then start on the display side, and possibly the image
+        //Also add the redirect to a QR code that can be scanned
 
-        //sp_getCurrentSong();
-
-        
-        if(true){
-            //No refresh token
-            spotifyConnectScreen(hostname + ".local");
-            //authSpotify();
-        } else {
-            //Spotify Authed
-            startupGraphics("Spotify Connected!");
-        }
+        // Now get the currently playing track
+       // String track = getCurrentlyPlayingTrack();
+       // if (track != "") {
+       //     Serial.println("Successfully fetched track: " + track);
+       // } else {
+       //     Serial.println("Failed to fetch track.");
+       // };
 
         
         
@@ -95,13 +100,13 @@ void setup() {
     else {
         Serial.println("Configportal running");
         captiveGraphics(ssid);
+        //Once Done, Restart
         //Not Connected to Wifi
     }
 }
 
 void loop() {
     wm.process();
-    ratLoop();
     //Serial.println("SS: "+wm.getWLStatusString());
     // put your main code here, to run repeatedly:
 }

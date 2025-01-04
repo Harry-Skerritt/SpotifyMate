@@ -36,27 +36,6 @@ The device also features WiFi provisioning for easy network connectivity
 The device hosts its own webserver allowing for this provisioning to be easy to use. (This is now outdated)
 
 
-[Make Your Own](https://github.com/Harry-Skerritt/SpotifyMate?tab=readme-ov-file#how-to-make)
-
-Some Renders of the Hardware side will be added soon, and some more images of the fireware GUI will also be added soon.
-
-**IMAGES BELOW ARE MOCKUPS**
-
-### The Main Screen
-![SpotifyMate Home](https://github.com/Harry-Skerritt/SpotifyMate/blob/main/assets/mock_main_screen.png)
-
-This is what the main screen should look like on the final device.
-
-### WiFi Provisioning
-![SpotifyMate Provisioning](https://github.com/Harry-Skerritt/SpotifyMate/blob/main/assets/mock_provisioning.png)
-
-The device also features WiFi provisioning for easy network connectivity
-
-![SpotifyMate Web Provisioning](https://github.com/Harry-Skerritt/SpotifyMate/blob/main/assets/provisioning_web.png)
-
-The device hosts its own webserver allowing for this provisioning to be easy to use. (This is now outdated)
-
-
 ## How does it work?
 SpotifyMate runs a custom C++ based firmware, providing a GUI which gives all necesarry details. 
 
@@ -76,25 +55,11 @@ More info to come...
 ## Libraries
 SpotifyMate is based around and would not function without several libraries. These are:
 
-[Spotify-API-Arduino](https://github.com/witnessmenow/spotify-api-arduino) library by witnessmenow on Github
+~~[Spotify-API-Arduino](https://github.com/witnessmenow/spotify-api-arduino) library by witnessmenow on Github~~ Uses own API calls
 
 [WiFiManager](https://github.com/tzapu/WiFiManager) library by tzapu on Github
 
-
-
-
-## How to make
-Coming Soon!
-
-## Libraries
-SpotifyMate is based around and would not function without several libraries. These are:
-
-[Spotify-API-Arduino](https://github.com/witnessmenow/spotify-api-arduino) library by witnessmenow on Github
-
-[WiFiManager](https://github.com/tzapu/WiFiManager) library by tzapu on Github
-
-
-
+[TFT_eSPI](https://github.com/Bodmer/TFT_eSPI) library by Bodmer on Github
 
 ## How to make
 Coming Soon!
@@ -107,8 +72,6 @@ Version: beta-1.0.0
 - Allows for generation of a refresh token
 - Has most of the setup GUI
 - API side of the current playing song is there, needs more work however
-
-
 
 Version: beta-0.0.1
 - Has a Captive Portal setup to allow connection and setup on device power on
