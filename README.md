@@ -3,9 +3,9 @@
 ![Dev Badge](https://img.shields.io/badge/IN_DEVELOPMENT-green)
 
 
-![Release Badge](https://img.shields.io/badge/Release-Pending-blue)
+![Release Badge](https://img.shields.io/badge/Release-beta2.0.0-blue)
 
-![Beta Badge](https://img.shields.io/badge/beta-v1.0.0-dark_green)
+![Beta Badge](https://img.shields.io/badge/beta-v2.0.0-dark_green)
 
 ![PlatformIO Badge](https://img.shields.io/badge/Built_with-PlatformIO-orange)
 

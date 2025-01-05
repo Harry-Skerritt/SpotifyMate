@@ -18,6 +18,7 @@
 //Fix the explicit not loading
 //Add the logo to the loading pages
 //QR Code for spotify auth
+//Change font size of artist if more than 20 chars
 //Other than that it 'works'--
 
 //Not Essential but would be VERY nice to have --
