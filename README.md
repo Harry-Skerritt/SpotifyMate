@@ -13,7 +13,7 @@
 
 
 ## What is SpotifyMate?
-Spotify Mate is a device which uses Spotifys WebAPI to give visuals as to what you are currently listening to. Aswell as some functionality to Play, Pause, Skip Forward, Skip Backwards, Add to liked songs and adjust the volume. The device also has one customisable button which can be used for things such as playing a specific playlist for example.
+Spotify Mate is a device which uses Spotifys WebAPI to give visuals as to what you are currently listening to. Aswell as some functionality to Play, Pause and add to liked songs.
 
 [Make Your Own](https://github.com/Harry-Skerritt/SpotifyMate?tab=readme-ov-file#how-to-make)
 
@@ -37,35 +37,41 @@ The device hosts its own webserver allowing for this provisioning to be easy to 
 
 
 ## How does it work?
-SpotifyMate runs a custom C++ based firmware, providing a GUI which gives all necesarry details. 
+The SpotifyMate firmware, has a GUI which makes the setup and use of the device pretty simple, but to explain a bit more about how the deice works: 
 
-The device will enter a 'setup mode' when first powered on, or without an active network connection, which allows the user to connect to the device and add it to their home WiFi network. 
+- The device will enter a 'provisiong mode' when first powered on, or without an active network connection, which allows the user to connect to the device and add it to their home WiFi network. 
 
-The device will also need linking to the users Spotify account.
-SpotifyMate runs a custom C++ based firmware, providing a GUI which gives all necesarry details. 
+- The device will also need linking to the users Spotify account, which can be done through a QR code displayed on screen.
 
-The device will enter a 'setup mode' when first powered on, or without an active network connection, which allows the user to connect to the device and add it to their home WiFi network. 
+- Once this is the done, the device should automatically connect and update whenever the current played track is changed. Should listening become inactive for 5 minutes or longer, the device will enter a sleep mode
 
-The device will also need linking to the users Spotify account.
-
-Once this is the done, the device should automatically connect and update whenever the current played track is changed. Should listening become inactive for 5 minutes or longer, the device will enter a sleep mode
-
-More info to come...
+- As the device is intended to have a touch screen, a single tap will play/pause the audio, and a double tap will add the song to the 'Liked Songs' playlist on Spotify.
 
 ## Libraries
 SpotifyMate is based around and would not function without several libraries. These are:
 
-~~[Spotify-API-Arduino](https://github.com/witnessmenow/spotify-api-arduino) library by witnessmenow on Github~~ Uses own API calls
 
-[WiFiManager](https://github.com/tzapu/WiFiManager) library by tzapu on Github
+[WiFiManager](https://github.com/tzapu/WiFiManager) library by tzapu on Github, for WiFi provisioning.
 
-[TFT_eSPI](https://github.com/Bodmer/TFT_eSPI) library by Bodmer on Github
+[TFT_eSPI](https://github.com/Bodmer/TFT_eSPI) library by Bodmer on Github, for all of the graphics.
+
+[TJpg_Decoder](https://github.com/Bodmer/TJpg_Decoder) library by Bodmer on Github, for pushing JPG's from a URL to the screen.
 
 ## How to make
-Coming Soon!
+Code: [Right Here!](https://github.com/Harry-Skerritt/SpotifyMate/tree/main)
+STLs: [Right Here!](https://github.com/Harry-Skerritt/SpotifyMate/tree/main)
+
+Alternativly all the above are avalable here:
+[Instructables](https://www.instructables.com/preview/EMD055BM5I72W15/)
 
 ## The Software
-**Current Version: beta-1.0.0**
+**Current Version: beta-2.0.0**
+
+Version: beta-2.0.0
+- Moved away from the bigger more complex design (Will be developed in the future...) [Code here](https://github.com/Harry-Skerritt/SpotifyMate/tree/landscape)
+- Kept all the same code as previously, but amended for a smaller screen
+- Added the home page to display song info
+- Moved over to using my own API calls rather than those from a library
 
 Version: beta-1.0.0
 - Captive Portal is setup and working

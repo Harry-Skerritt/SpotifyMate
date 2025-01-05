@@ -1,4 +1,5 @@
 #include "SpotifyAuth.h"
+#include <Preferences.h>
 #include <WiFi.h>
 
 String accessToken = "";
@@ -6,9 +7,9 @@ String refreshToken = "";
 unsigned long tokenExpiryTime = 0; // Expiry time in seconds since epoch
 
 
-const char* clientId = "xxxx"; //Put into SPIFFS
-const char* clientSecret = "xxxx"; //Put into SPIFFS
-const char* redirectUri = "http://xxx.xxx.xxx.xxxx/callback"; // Update to use mDNS (String("http://"+ WiFi.localIP().toString() + "/callback").c_str();)
+const char* clientId = "xxx";
+const char* clientSecret = "xxx";
+const char* redirectUri = "http://spotify-mate.local/callback";
 const char* scopes = "user-read-currently-playing user-read-playback-state user-modify-playback-state";
 
 WebServer server(80);
@@ -16,7 +17,50 @@ WebServer server(80);
 void convertFromJson(JsonVariantConst src, tm& dst) {
   strptime(src.as<const char*>(), "%FT%TZ", &dst);
 }
+
+void putSpotifyAPIKeys(String clientID, String clientSecret){
+  //This only needs to be called once (or if secret changes)
+  Preferences prefs;
+  prefs.begin("spotify-keys", false);
+  prefs.putString("clientId", clientID);
+  //prefs.putString("clientSecret", clientSecret);
+  prefs.end();
+
+  Serial.println("API Keys Stored Successfully!");
+}
+
+void loadSpotifyAPIKeys(){
+  Serial.println("Getting API Keys");
+  Serial.println(clientId);
+
+  Preferences prefs;
+  prefs.begin("spotify-keys", false);
+  clientId = prefs.getString("clientId", "clientID").c_str();
+  //clientSecret = prefs.getString("clientSecret", "clientSecret").c_str();
+  prefs.end();
+
+  Serial.println(clientId);
+  Serial.println(clientSecret);
+}
  
+
+void loadSpotifyToken() {
+  Serial.println("Getting Access Token");
+  Preferences prefs;
+  prefs.begin("spotify-data", false);
+  accessToken = prefs.getString("accessToken", "");
+  tokenExpiryTime = prefs.getLong("expiryTime", 0);
+  prefs.end();
+}
+
+void saveSpotifyToken(){
+  Serial.println("Saving Access Token");
+  Preferences prefs;
+  prefs.begin("spotify-data", false);
+  prefs.putString("accessToken", accessToken);
+  prefs.putLong("expiryTime", tokenExpiryTime);
+  prefs.end();
+}
 
 void authSpotify() {
   Serial.println("Starting Spotify authentication...");
@@ -34,15 +78,17 @@ void authSpotify() {
     server.handleClient();
     delay(100);
   }
+  //Should be an access and stuff now
+  saveSpotifyToken();
 }
 
 void redirectToSpotifyAuthorization() {
+  Serial.println(clientId);
   String authUrl = "https://accounts.spotify.com/authorize?response_type=code&client_id=" + String(clientId) +
                    "&scope=" + String(scopes) + "&redirect_uri=" + String(redirectUri);
   Serial.println("Visit the following URL to authenticate:");
   Serial.println(authUrl);
 }
-
 
 void handleSpotifyRedirect() {
   if (server.hasArg("code")) {
@@ -92,6 +138,7 @@ String getAccessTokenFromCode(const String& code) {
 }
 
 String getValidAccessToken() {
+  Serial.println("Checking if Access Token is Valid");
   if (millis() / 1000 >= tokenExpiryTime) {
     Serial.println("Access token expired. Refreshing...");
     return refreshAccessToken();
@@ -127,7 +174,15 @@ String refreshAccessToken() {
   }
 }
 
+String track_title;
+String track_artist;
+String album_url;
+int progress;
+int duration;
+bool explicit_song;
+
 String getCurrentlyPlayingTrack() {
+  Serial.println("Getting Currently Playing Track");
   String token = getValidAccessToken(); // Ensure the token is valid before making API calls
   
   if (token == "") {
@@ -138,26 +193,85 @@ String getCurrentlyPlayingTrack() {
   HTTPClient http;
   String url = "https://api.spotify.com/v1/me/player/currently-playing";  // Get currently playing track
 
+
   http.begin(url);
   http.addHeader("Authorization", "Bearer " + token);
+
 
   int httpCode = http.GET();
   String payload = http.getString();
 
+
   if (httpCode == 200) {
+    //Music is Playing
     DynamicJsonDocument doc(1024);
     deserializeJson(doc, payload);
 
+    //Serial.println("DEBUG 5");
     const char* trackName = doc["item"]["name"];
+    //Serial.println(trackName);
+
     const char* artistName = doc["item"]["artists"][0]["name"];
+    //Serial.println(artistName);
+
+    const char* albumURL = doc["item"]["album"]["images"][0]["url"];
+    //Serial.println(albumURL);
+
+    const int i_progress = doc["progress_ms"];
+    //Serial.println("P: " + String(i_progress));
+
+    const int i_duration = doc["item"]["duration_ms"];
+    //Serial.println("D: " + String(i_duration));
+
+    explicit_song = doc["item"]["explcit"];
+
+    //Serial.println("DEBUG 6");
+    //delay(20);
+
+    track_title = String(trackName);
+    track_artist = String(artistName);
+    album_url = String(albumURL);
+    progress = i_progress;
+    duration = i_duration;
+
+    //Serial.println("DEBUG 7");
 
     Serial.println("Currently playing track: " + String(trackName));
     Serial.println("Artist: " + String(artistName));
     return String(trackName);
   } else {
+    //Music is not playing?
+
+    track_title = "Nothing is Playing";
+    track_artist = "-";
+    album_url = "https://raw.githubusercontent.com/Harry-Skerritt/test/refs/heads/main/not_playing_album.jpg";
+    progress = 0;
+    duration = 100;
+    
+
     Serial.println("Error fetching currently playing track: " + String(httpCode));
-    return "";
+    return String(track_title); //""
   }
+}
+
+String getCurrentlyPlayingArtist(){
+  return track_artist;
+}
+
+String getAlbumUrl(){
+  return album_url;
+}
+
+int getProgress(){
+  return progress;
+}
+
+int getDuration(){
+  return duration;
+}
+
+bool getExplicitSong(){
+  return explicit_song;
 }
 
 String getAuthURL(){

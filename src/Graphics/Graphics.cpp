@@ -2,13 +2,14 @@
 #include <SPI.h>
 #include <TFT_eSPI.h>
 #include <Graphics.h>
-//#include <TJpg_Decoder.h>
 #include <FS.h>
 #include <HTTPClient.h>
-#include <JPEGDecoder.h>
 #include <SpotifyAuth.h>
 #include <qrcode.h>
-#include <smLogo.h>
+#include <TJpg_Decoder.h>
+#include <LittleFS.h>
+#include "Web_Fetch.h"
+#include "List_LittleFS.h"
 
 TFT_eSPI tft = TFT_eSPI(); //Create the screen
 
@@ -22,21 +23,39 @@ int32_t toInt(int r, int g, int b) {
 //Spotify White 255, 255, 255
 //Spotify Green 30 215 96
 
+//JPG Try 2
+bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t* bitmap)
+{
+  // Stop further decoding as image is running off bottom of screen
+  if ( y >= tft.height() ) return 0;
+
+  // This function will clip the image block rendering automatically at the TFT boundaries
+  tft.pushImage(x, y, w, h, bitmap);
+
+  // Return 1 to decode next block
+  return 1;
+}
+
 void initialiseGraphics() {
 
     tft.init(); //Initialise the screen
     tft.resetViewport();
-    //tft.begin();
 
-    //TJpg Decoder
-     // The jpeg image can be scaled by a factor of 1, 2, 4, or 8
-    //TJpgDec.setJpgScale(1);
-
-    // The decoder must be given the exact name of the rendering function above
-    //TJpgDec.setCallback(tft_output);
-
-    //Temp
     tft.setRotation(0); //Portrait
+
+
+
+    //Jp2
+    if(!LittleFS.begin()){
+      Serial.println("LitleFS Init Failed");
+      while(1) yield();
+    }
+    Serial.println("LittleFS Initialised");
+
+
+    TJpgDec.setJpgScale(4);
+    TJpgDec.setSwapBytes(true);
+    TJpgDec.setCallback(tft_output);
 }
 
 void startupGraphics(String msg) {
@@ -54,7 +73,7 @@ void startupGraphics(String msg) {
     tft.setTextDatum(TR_DATUM);
     tft.drawString("Mate", (tft.width() - 9), 46);
 
-    tft.pushImage(130, 90, 60, 60, sm_logo);
+    //tft.pushImage(130, 90, 60, 60, sm_logo);
 
     tft.setTextColor(TFT_WHITE);
     tft.setTextSize(1.25);
@@ -126,97 +145,22 @@ void spotifyConnectScreen() {
 
 }
 
-//Convert from 24bit rgb to 16bit (RGB565)
-uint16_t convertToRGB565(uint8_t r, uint8_t g, uint8_t b) {
-    return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
-}
 
-// Function to render JPEG on the TFT screen
-void renderJPEG(int xpos, int ypos) {
-   uint16_t *pImage;
+String msToFormattedTime(int milliseconds_in){
+  int totalSeconds = milliseconds_in / 1000;
+  int resultMinutes = totalSeconds / 60;
+  int resultSeconds = totalSeconds % 60;
 
-    // Loop through each row of the image
-    for (uint16_t row = 0; row < JpegDec.height; row++) {
-        if (JpegDec.read()) {
-            pImage = JpegDec.pImage;
+  resultMinutes = floor(resultMinutes);
+  resultSeconds = floor(resultSeconds);
 
-            // Loop through each pixel in the row
-            for (int i = 0; i < JpegDec.width; i++) {
-                uint8_t r = pImage[i * 3];       // Red
-                uint8_t g = pImage[i * 3 + 1];   // Green
-                uint8_t b = pImage[i * 3 + 2];   // Blue
-                pImage[i] = convertToRGB565(r, g, b);  // Convert and store in RGB565
-            }
+  String formattedTime;
+  formattedTime = String(resultMinutes) + ":" + String(resultSeconds);
 
-            // Render each pixel as a 2x2 block for scaling to 128x128
-            for (int i = 0; i < JpegDec.width; i++) {
-                uint16_t pixel = pImage[i]; // Get the RGB565 pixel
-                
-                // Create a 2x2 block of the same pixel for horizontal and vertical scaling
-                uint16_t doublePixel[9] = {pixel, pixel, pixel, pixel, pixel, pixel, pixel, pixel, pixel}; // Duplicate for 2x2 scaling
-                
-                // Push the 2x2 block of pixels to the screen (doubled horizontally and vertically)
-                tft.pushImage(xpos + i * 3, ypos + row * 3, 3, 3, doublePixel);
-            }
-        }
-    }
-}
+  Serial.begin(115200);
+  Serial.println(formattedTime);
 
-// Download and decode album art
-void displayAlbumArt(String albumArtUrl) {
-  Serial.println("Width: " + String(tft.width()));
-  Serial.println("Height: " + String(tft.height()));
-
-  HTTPClient http;
-  http.begin(albumArtUrl);
-
-  int httpCode = http.GET();
-  if (httpCode == 200) {
-    int contentLength = http.getSize();
-    WiFiClient* stream = http.getStreamPtr();
-    uint8_t *imgBuffer = (uint8_t*)malloc(contentLength);
-
-    if (imgBuffer) {
-      // Read the stream into the buffer
-      int bytesRead = stream->readBytes(imgBuffer, contentLength);
-
-      // Decode the JPEG from the buffer
-      if (JpegDec.decodeArray(imgBuffer, bytesRead)) {
-        Serial.println("JPEG decoded successfully!");
-        renderJPEG(24, 10); // Render the image on the TFT screen
-      } else {
-        Serial.println("Failed to decode JPEG.");
-      }
-
-      free(imgBuffer); // Free the allocated memory
-    } else {
-      Serial.println("Failed to allocate memory for image buffer.");
-    }
-  } else {
-    Serial.println("Error fetching album art.");
-  }
-  http.end();
-}
-
-
-
-
-int convertMillisSec(String millis_s){
-  int millis = millis_s.toInt();
-  int seconds = (millis/1000)%60;
-  
-
-  seconds = floor(seconds);
-  return seconds;
-}
-
-int convertMillisMin(String millis_s){
-  int millis = millis_s.toInt();
-  int minutes = (millis/(1000*60))%60;
-  minutes = floor(minutes);
-
-  return minutes;
-
+  return formattedTime;
 }
 
 // Draw the progress bar
@@ -241,85 +185,98 @@ void drawProgressBar(int x, int y, int width, int height, int currentTime, int d
   tft.drawRect(x, y, width, height, TFT_WHITE);
 }
 
-// Function to wrap text within a specified width
-void wrapText(const char* text, int x, int y, int maxWidth) {
-  char buffer[100];  // Temporary buffer to store a word or line of text
-  int lineStart = 0;  // Track the start of each line
-  int textLength = strlen(text);  // Length of the input text
-  int cursorX = x;  // Current x position for the text
+//18 Characters
 
-  // Start displaying the text
-  tft.setCursor(cursorX, y);
+void getAlbumArt(String url){
 
-  for (int i = 0; i < textLength; i++) {
-    // Check if adding the current character will exceed the width
-    int wordWidth = tft.textWidth(text + lineStart, i - lineStart + 1); // width of current word
+  //listLittleFS();
 
-    // Check if adding this character exceeds maxWidth
-    if (wordWidth > maxWidth) {
-      // Print the line of text and move to next line
-      tft.println(text + lineStart);
-      cursorX = x;  // Reset cursor to the start of the next line
-      lineStart = i;  // Move the starting index for the next line
-      tft.setCursor(cursorX, y + tft.fontHeight()); // Adjust cursor to the next line
-    }
+  if(LittleFS.exists("/album.jpg") == true){
+    Serial.println("Removing File!");
+    LittleFS.remove("/album.jpg");
   }
 
-  // Print the remaining text
-  tft.print(text + lineStart);
+  bool loaded_ok = getFile(url, "/album.jpg");
+
+  //listLittleFS();
+
+  TJpgDec.setJpgScale(4);
+  TJpgDec.drawFsJpg(43, 16, "/album.jpg", LittleFS);
+
+
 }
 
 String currentlyPlayingURL = "";
 
-void drawCurrentPlaying(String title, String artist, String url, String progress_ms, String duration_ms, String account_name, bool playing, bool liked){
+void drawCurrentPlaying(String title, String artist, String url, int progress_ms, int duration_ms, bool explicit_song){
   Serial.begin(115200);
   //Get duration in terms of minutes and seconds
-  int progress_s = convertMillisSec(progress_ms);
-  int progress_m = convertMillisMin(progress_ms);
-  int duration_s = convertMillisSec(duration_ms);
-  int duration_m = convertMillisMin(duration_ms);
+  Serial.println("P: " + String(progress_ms));
+  Serial.println("D: " + String(duration_ms));
+  
+  String progressTime = msToFormattedTime(progress_ms);
+  String durationTime = msToFormattedTime(duration_ms);
 
   tft.fillScreen(0x0000); //Set background
 
   //Draw Album Art
-  if(url == currentlyPlayingURL){
-    //The song currently playing is the same as last time a call was made
-    //No need to redraw the image
-
-    currentlyPlayingURL = url;
-  } else {
+  if(url != currentlyPlayingURL){
     //The song currently playing is not what was playing last time the call was made
     //Redraw the image
-  
-    displayAlbumArt(url);
+
+    getAlbumArt(url);
     currentlyPlayingURL = url;
+  } else {
+    TJpgDec.drawFsJpg(43, 16, "/album.jpg", LittleFS);
   }
 
+//EDIT THE README
 
   //Draw Song Name
   tft.setTextColor(TFT_WHITE);
   tft.setTextSize(2);
   tft.setTextDatum(TC_DATUM);
-  tft.drawString(title.c_str(), tft.width()/2, 206);
-  //wrapText(title.c_str(), tft.width()/2, 206, 128);
+
+
+  if(title.length() > 20){
+    //More than 20 chars
+    //Wrap Around
+    tft.setTextWrap(true, false);
+    tft.setCursor(0, 196);
+    tft.print(title.c_str());
+  } else {
+    //Less than 20
+    tft.drawString(title.c_str(), tft.width()/2, 196);
+  }
+  
+  
+  
 
   tft.setTextColor(toInt(155, 155, 155));
   tft.setTextSize(2);
   tft.setTextDatum(TC_DATUM);
-  tft.drawString(artist.c_str(), tft.width()/2, 256);
+  tft.drawString(artist.c_str(), tft.width()/2, 246);
 
   //Draw progress bar
   tft.setTextColor(toInt(255, 255, 255));
   tft.setTextSize(1);
 
   tft.setTextDatum(TL_DATUM);
-  tft.drawString(String(progress_m + ":"+ progress_s).c_str(), 10, 280); //Progress
+  tft.drawString(progressTime, 10, 280); //Progress
 
   tft.setTextDatum(TR_DATUM);
-  tft.drawString(String(duration_m + ":"+ duration_s).c_str(), (tft.width()-10), 280); //Duration
+  tft.drawString(durationTime, (tft.width()-10), 280); //Duration
   
   //Actual Bar
-  drawProgressBar(10, 298, 220, 12, progress_ms.toInt(), duration_ms.toInt());
+  drawProgressBar(10, 298, 220, 12, progress_ms, duration_ms);
+
+  //If Explicit
+  if(explicit_song){
+    TJpgDec.setJpgScale(1);
+    TJpgDec.drawFsJpg(211, 156, "/explicit.jpg", LittleFS);
+    //Need to make sure it changes 
+  }
+  
 
 
 
