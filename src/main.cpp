@@ -9,28 +9,34 @@
 
 
 //STILL TO DO --
+//HIGH PRIORITY -> Find the cause of the -11 and -1 HTTPCodes and fix it as its causing crashes and issues
 //Make it restart once its finished provisioning
-//Make it not need to be reauthroised every time its restarted
+//Make it not need to be reauthroised every time its restarted -> Testing (seems to be okay as of 05/01/24)
 //Add touch screen 
 //Add play/pause
 //Add add to liked songs
-//Make the main screen sprites, so only the bar can be updated and not the whole screen
-//Fix the explicit not loading
-//Add the logo to the loading pages
+//Make the main screen sprites, so only the bar can be updated and not the whole screen -> Done#
+//Fix the explicit not loading -> Done (typo)#
+//Add the logo to the loading pages -> Done#
 //QR Code for spotify auth
-//Change font size of artist if more than 20 chars
+//Change font size of artist if more than 20 chars -> Done#
+//Every 20-40 mins it drops off - Fix
+//Look at the check key is valid function -> Testing (I think) (seems to be okay as of 05/01/24)
+//Time shows as 0:8 not 0:08 -> Done#
+//Remove Unnecessary or DEBUG Serial Prints
+//Proper not playing support
+//5 min timeout for not playing
 //Other than that it 'works'--
 
 //Not Essential but would be VERY nice to have --
-//Make it get the next song's image in the queue to allow smooth transition
-//Some handling for is the next song is the one expected
-//Background the average colour of the album art (Optional)
+//Make it get the next song's image in the queue to allow smooth transition -> Weird Empty API Responses with 200 Code
+//Some handling for if the next song is the one expected -> Weird Empty API Responses with 200 Code
+//Background the average colour of the album art (Very Optional)
 
 //IF POSSIBLE --
 //Make getting the album image quicker (~11s currently)
 //Progress bar about 3s behind (if can update more 'real time' do)
-
-
+//Background the avg colour of album art
 
 WiFiManager wm;
 bool setupCompleted = false; //Only true if on wifi and connected to spotify
@@ -51,8 +57,9 @@ void setup() {
     //putSpotifyAPIKeys(clientId, clientSecret);
 
     
-    String accessToken = "";
-    long tokenExpiryTime = 0;
+    String l_refreshToken = "";
+    String l_accessToken = "";
+    long l_tokenExpiryTime = 0;
 
     startupGraphics("Getting Credentials...");
     //loadSpotifyAPIKeys(); //Check this is the right position
@@ -89,33 +96,29 @@ void setup() {
         Serial.println("mDNS responder started");
 
         //Now on WiFi
-        //Check if connected to spotify
-        //  If So then get the track
-        //  If not then auth spotify
 
         //Spotify Get Access Token
         prefs.begin("spotify-data", false);
-        accessToken = prefs.getString("accessToken", "");
-        tokenExpiryTime = prefs.getLong("expiryTime", 0);
+        l_refreshToken = prefs.getString("refreshToken", "");
+        l_tokenExpiryTime = prefs.getLong("expiryTime", 0);
+        l_accessToken = prefs.getString("accessToken", "");
         prefs.end();
 
-        Serial.println("AT: " + accessToken);
+        Serial.println("RT: " + l_refreshToken);
+        Serial.println("AT: " + l_accessToken);
         Serial.println("ET: " + String(tokenExpiryTime));
 
-        bool tokenPresent = false;
-
         //Fix not needing to auth everytime
-        if(accessToken == ""){
-            tokenPresent = false;
+        if(l_refreshToken == "" || l_accessToken == ""){
             //There is no access token (assume not authorised)
             startupGraphics("Authing Spotify!");
             authSpotify();
-            //Need to do something once connected; Loop? use the bool
+            setupCompleted = true;
         } else {
             //There is a token, best to get a new one.
             loadSpotifyToken(); //Loads from Preferences
             delay(500); //Time to breathe
-            refreshAccessToken(); //Check the token is valid -> Refresh always for now
+            getValidAccessToken(); //Check the token is valid -> Refresh always for now
             startupGraphics("Spotify Connected!");
             setupCompleted = true;
         }
@@ -147,6 +150,6 @@ void loop() {
 
 
         drawCurrentPlaying(track, artist, albumUrl, progress, duration, explicit_song);     
-        delay(2000); //Refresh every 2 seconds
+        delay(2000); //Refresh every 2 seconds (Any quicker brings -11 codes?)
     }
 }

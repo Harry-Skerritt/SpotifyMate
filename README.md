@@ -65,7 +65,14 @@ Alternativly all the above are avalable here:
 [Instructables](https://www.instructables.com/preview/EMD055BM5I72W15/)
 
 ## The Software
-**Current Version: beta-2.0.0**
+**Current Version: beta-2.1.0**
+
+Version: beta-2.1.0
+- Included the loop functionality so the device works with basic functionality
+- Fixed some bugs regarding API
+- Introduced some more bugs
+- Lacking in touch functionality
+- Overall in a functional, but pre-release state
 
 Version: beta-2.0.0
 - Moved away from the bigger more complex design (Will be developed in the future...) [Code here](https://github.com/Harry-Skerritt/SpotifyMate/tree/landscape)

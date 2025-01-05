@@ -10,8 +10,11 @@
 #include <LittleFS.h>
 #include "Web_Fetch.h"
 #include "List_LittleFS.h"
+#include <Main.h>
 
 TFT_eSPI tft = TFT_eSPI(); //Create the screen
+
+TFT_eSprite progressSprite = TFT_eSprite(&tft);
 
 int32_t toInt(int r, int g, int b) {
 			
@@ -23,7 +26,6 @@ int32_t toInt(int r, int g, int b) {
 //Spotify White 255, 255, 255
 //Spotify Green 30 215 96
 
-//JPG Try 2
 bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t* bitmap)
 {
   // Stop further decoding as image is running off bottom of screen
@@ -56,6 +58,8 @@ void initialiseGraphics() {
     TJpgDec.setJpgScale(4);
     TJpgDec.setSwapBytes(true);
     TJpgDec.setCallback(tft_output);
+
+    progressSprite.createSprite(tft.width(), 50); //Progress bar
 }
 
 void startupGraphics(String msg) {
@@ -74,6 +78,9 @@ void startupGraphics(String msg) {
     tft.drawString("Mate", (tft.width() - 9), 46);
 
     //tft.pushImage(130, 90, 60, 60, sm_logo);
+    TJpgDec.setJpgScale(1);
+    TJpgDec.drawFsJpg(70, 113, "/SM_100x100.jpg", LittleFS);
+    TJpgDec.setJpgScale(4);
 
     tft.setTextColor(TFT_WHITE);
     tft.setTextSize(1.25);
@@ -128,17 +135,50 @@ void captiveGraphics(const char *ssid) {
 }
 
 void spotifyConnectScreen() {
+  //MAKE WORK
     tft.fillScreen(toInt(18, 18, 18));
 
+    tft.setTextColor(TFT_WHITE);
+    tft.setTextSize(3.2);
+    tft.setTextDatum(TL_DATUM);
+    tft.drawString("Spotify", 9, 46);
+
+
+    tft.setTextColor(toInt(30, 215, 96));
+    tft.setTextSize(3.2);
+    tft.setTextDatum(TR_DATUM);
+    tft.drawString("Mate", (tft.width() - 9), 46);
+  
 
     tft.setTextColor(TFT_WHITE);
-    tft.setTextSize(2);
+    tft.setTextSize(1);
     tft.setTextDatum(MC_DATUM);
-    tft.drawString("Scan to link with Spotify", (tft.width() / 2)-65, 30);
+    tft.drawString("Scan to link with Spotify", (tft.width() / 2)-65, 59);
 
-    QRcode qrcode(&tft);
-    qrcode.init();
-    qrcode.create(getAuthURL());
+    String authURL = getAuthURL();
+    String QRCodeURL = "https://quickchart.io/qr?text=" + authURL + 
+    "&dark=%231ed760&light=%23121212&centerImageUrl=https://raw.githubusercontent.com/Harry-Skerritt/test/refs/heads/main/SM%20100x100.jpg&size=50";
+
+    listLittleFS();
+    
+    if(LittleFS.exists("/qrcode.jpg") == true){
+      Serial.println("Removing File!");
+      LittleFS.remove("/qrcode.jpg");
+    }
+
+  bool loaded_ok = getFile(QRCodeURL, "/qrcode.jpg");
+
+  //listLittleFS();
+
+  TJpgDec.setJpgScale(2);
+  TJpgDec.drawFsJpg(38, 89, "/qrcode.jpg", LittleFS);
+
+    //https://accounts.spotify.com/authorize?response_type=code%26client_id=517041868f9544a0bd757e847ffa3256%26scope=user-read-currently-playing user-read-playback-state user-modify-playback-state%26redirect_uri=http://spotify-mate.local/callback
+    
+
+    //QRcode qrcode(&tft);
+    //qrcode.init();
+    //qrcode.create(getAuthURL());
     //Doesn't scan :/ Fix Later
     
 
@@ -154,8 +194,14 @@ String msToFormattedTime(int milliseconds_in){
   resultMinutes = floor(resultMinutes);
   resultSeconds = floor(resultSeconds);
 
+  String resultSeconds_s = String(resultSeconds);
+  if(resultSeconds < 10){
+    //Add leading zeros
+    resultSeconds_s = "0" + resultSeconds_s;
+  }
+
   String formattedTime;
-  formattedTime = String(resultMinutes) + ":" + String(resultSeconds);
+  formattedTime = String(resultMinutes) + ":" + resultSeconds_s;
 
   Serial.begin(115200);
   Serial.println(formattedTime);
@@ -176,13 +222,39 @@ void drawProgressBar(int x, int y, int width, int height, int currentTime, int d
   int filledWidth = progress * width;
 
   // Draw the background of the progress bar
-  tft.fillRect(x, y, width, height, toInt(24, 24, 24));
+  progressSprite.fillRect(x, y, width, height, toInt(24, 24, 24));
 
   // Draw the filled portion of the progress bar
-  tft.fillRect(x, y, filledWidth, height, toInt(30, 215, 96));
+  progressSprite.fillRect(x, y, filledWidth, height, toInt(30, 215, 96));
   
   // Optionally, draw a border around the progress bar
-  tft.drawRect(x, y, width, height, TFT_WHITE);
+  progressSprite.drawRect(x, y, width, height, TFT_WHITE);
+}
+
+void drawProgressSprite(int progress_ms, int duration_ms){
+  //Get duration in terms of minutes and seconds
+  Serial.println("P: " + String(progress_ms));
+  Serial.println("D: " + String(duration_ms));
+  
+  String progressTime = msToFormattedTime(progress_ms);
+  String durationTime = msToFormattedTime(duration_ms);
+
+  progressSprite.fillRect(0, 0, progressSprite.width(), progressSprite.height(), 0x0000); //Fill the sprite before drawing
+
+  //Draw progress bar
+  progressSprite.setTextColor(toInt(255, 255, 255));
+  progressSprite.setTextSize(1);
+
+  progressSprite.setTextDatum(TL_DATUM);
+  progressSprite.drawString(progressTime, 10, 18); //Progress
+
+  progressSprite.setTextDatum(TR_DATUM);
+  progressSprite.drawString(durationTime, (tft.width()-10), 18); //Duration
+  
+  //Actual Bar
+  drawProgressBar(10, 29, 220, 12, progress_ms, duration_ms);
+
+  progressSprite.pushSprite(0, tft.height() - 50);
 }
 
 //18 Characters
@@ -207,77 +279,85 @@ void getAlbumArt(String url){
 }
 
 String currentlyPlayingURL = "";
+String nextSongURL = "";
+String currentSongTitle = "";
 
 void drawCurrentPlaying(String title, String artist, String url, int progress_ms, int duration_ms, bool explicit_song){
   Serial.begin(115200);
-  //Get duration in terms of minutes and seconds
-  Serial.println("P: " + String(progress_ms));
-  Serial.println("D: " + String(duration_ms));
-  
-  String progressTime = msToFormattedTime(progress_ms);
-  String durationTime = msToFormattedTime(duration_ms);
 
-  tft.fillScreen(0x0000); //Set background
-
-  //Draw Album Art
-  if(url != currentlyPlayingURL){
-    //The song currently playing is not what was playing last time the call was made
-    //Redraw the image
-
-    getAlbumArt(url);
-    currentlyPlayingURL = url;
+  if(url == currentlyPlayingURL && currentSongTitle == title){
+    //The same song is playing as before
+    //Dont update anything but the sprite
+    drawProgressSprite(progress_ms, duration_ms);
   } else {
-    TJpgDec.drawFsJpg(43, 16, "/album.jpg", LittleFS);
+    //The song has changed - change everything!
+    tft.fillScreen(0x0000); //Set background
+
+    //Album Art
+    if(url == nextSongURL){
+      //The already cached song is playing
+      //Load the cached image then continue
+      TJpgDec.setJpgScale(4);
+      TJpgDec.drawFsJpg(43, 16, "/album.jpg", LittleFS);
+      currentlyPlayingURL = url;
+    } else {
+      // A different song is playing
+      getAlbumArt(url);
+      currentlyPlayingURL = url;
+    }
+
+    //Draw Song Name
+    tft.setTextColor(TFT_WHITE);
+    tft.setTextSize(2);
+    tft.setTextDatum(TC_DATUM);
+
+    currentSongTitle = title;
+
+
+    if(TRUNCTUATE_REMASTER_TITLES){
+      //If to remove '- XXXX Remaster' from titles
+      std::string temp_title = title.c_str();
+      int substring_length;
+      if((substring_length = temp_title.find("-")) != std::string::npos){
+        //The Substring is present
+        temp_title = temp_title.substr(0, substring_length);
+        title = temp_title.c_str();
+      } else{
+        //Not present -> Continue with string as it
+        title = title;
+      }
+    }
+
+    if(title.length() > 20){
+      //More than 20 chars
+      //Wrap Around
+      tft.setTextWrap(true, false);
+      tft.setCursor(0, 196);
+      tft.print(title.c_str());
+    } else {
+      //Less than 20
+      tft.drawString(title.c_str(), tft.width()/2, 196);
+    }  
+  
+    tft.setTextColor(toInt(155, 155, 155));
+    if(artist.length() > 20){
+      tft.setTextSize(1);
+      tft.setTextDatum(TC_DATUM);
+      tft.drawString(artist.c_str(), tft.width()/2, 246);
+    } else {
+      tft.setTextSize(2);
+      tft.setTextDatum(TC_DATUM);
+      tft.drawString(artist.c_str(), tft.width()/2, 246);
+    }
+
+    //If Explicit
+    if(explicit_song == true){
+      TJpgDec.setJpgScale(1);
+      TJpgDec.drawFsJpg(211, 156, "/explicit.jpg", LittleFS);
+    }
+
+    //Progress bar
+    drawProgressSprite(progress_ms, duration_ms);
+    //All drawn at this point
   }
-
-//EDIT THE README
-
-  //Draw Song Name
-  tft.setTextColor(TFT_WHITE);
-  tft.setTextSize(2);
-  tft.setTextDatum(TC_DATUM);
-
-
-  if(title.length() > 20){
-    //More than 20 chars
-    //Wrap Around
-    tft.setTextWrap(true, false);
-    tft.setCursor(0, 196);
-    tft.print(title.c_str());
-  } else {
-    //Less than 20
-    tft.drawString(title.c_str(), tft.width()/2, 196);
-  }
-  
-  
-  
-
-  tft.setTextColor(toInt(155, 155, 155));
-  tft.setTextSize(2);
-  tft.setTextDatum(TC_DATUM);
-  tft.drawString(artist.c_str(), tft.width()/2, 246);
-
-  //Draw progress bar
-  tft.setTextColor(toInt(255, 255, 255));
-  tft.setTextSize(1);
-
-  tft.setTextDatum(TL_DATUM);
-  tft.drawString(progressTime, 10, 280); //Progress
-
-  tft.setTextDatum(TR_DATUM);
-  tft.drawString(durationTime, (tft.width()-10), 280); //Duration
-  
-  //Actual Bar
-  drawProgressBar(10, 298, 220, 12, progress_ms, duration_ms);
-
-  //If Explicit
-  if(explicit_song){
-    TJpgDec.setJpgScale(1);
-    TJpgDec.drawFsJpg(211, 156, "/explicit.jpg", LittleFS);
-    //Need to make sure it changes 
-  }
-  
-
-
-
 }

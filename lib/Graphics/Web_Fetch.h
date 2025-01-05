@@ -18,12 +18,12 @@ bool getFile(String url, String filename) {
     return 0;
   }
 
-  Serial.println("Downloading "  + filename + " from " + url);
+  //Serial.println("Downloading "  + filename + " from " + url);
 
   // Check WiFi connection
   if ((WiFi.status() == WL_CONNECTED)) {
 
-    Serial.print("[HTTP] begin...\n");
+    //Serial.print("[HTTP] begin...\n");
 
 #ifdef ARDUINO_ARCH_ESP8266
     std::unique_ptr<BearSSL::WiFiClientSecure>client(new BearSSL::WiFiClientSecure);
@@ -36,7 +36,7 @@ bool getFile(String url, String filename) {
     http.begin(url);
 #endif
 
-    Serial.print("[HTTP] GET...\n");
+    //Serial.print("[HTTP] GET...\n");
     // Start connection and send HTTP header
     int httpCode = http.GET();
     if (httpCode == 200) {
@@ -46,7 +46,7 @@ bool getFile(String url, String filename) {
         return 0;
       }
       // HTTP header has been send and Server response header has been handled
-      Serial.printf("[HTTP] GET... code: %d\n", httpCode);
+      //Serial.printf("[HTTP] GET... code: %d\n", httpCode);
 
       // File found at server
       if (httpCode == HTTP_CODE_OK) {
@@ -80,8 +80,8 @@ bool getFile(String url, String filename) {
           }
           yield();
         }
-        Serial.println();
-        Serial.print("[HTTP] connection closed or file end.\n");
+        //Serial.println();
+        //Serial.print("[HTTP] connection closed or file end.\n");
       }
       f.close();
     }

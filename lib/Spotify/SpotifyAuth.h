@@ -32,6 +32,7 @@ int getProgress();
 int getDuration();
 bool getExplicitSong();
 
+String getNextTrackInQueue();
 String getAccessTokenFromCode(const String& code);
 String getValidAccessToken();
 String refreshAccessToken();

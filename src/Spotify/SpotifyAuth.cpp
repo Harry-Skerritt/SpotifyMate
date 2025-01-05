@@ -7,8 +7,8 @@ String refreshToken = "";
 unsigned long tokenExpiryTime = 0; // Expiry time in seconds since epoch
 
 
-const char* clientId = "xxx";
-const char* clientSecret = "xxx";
+const char* clientId = "xxx"; //Remove before any commits
+const char* clientSecret = "xxx"; //Remove before any commits
 const char* redirectUri = "http://spotify-mate.local/callback";
 const char* scopes = "user-read-currently-playing user-read-playback-state user-modify-playback-state";
 
@@ -18,6 +18,7 @@ void convertFromJson(JsonVariantConst src, tm& dst) {
   strptime(src.as<const char*>(), "%FT%TZ", &dst);
 }
 
+//Not used currently
 void putSpotifyAPIKeys(String clientID, String clientSecret){
   //This only needs to be called once (or if secret changes)
   Preferences prefs;
@@ -44,12 +45,14 @@ void loadSpotifyAPIKeys(){
 }
  
 
+
 void loadSpotifyToken() {
   Serial.println("Getting Access Token");
   Preferences prefs;
   prefs.begin("spotify-data", false);
-  accessToken = prefs.getString("accessToken", "");
+  refreshToken = prefs.getString("refreshToken", "");
   tokenExpiryTime = prefs.getLong("expiryTime", 0);
+  accessToken = prefs.getString("accessToken", "");
   prefs.end();
 }
 
@@ -57,8 +60,9 @@ void saveSpotifyToken(){
   Serial.println("Saving Access Token");
   Preferences prefs;
   prefs.begin("spotify-data", false);
-  prefs.putString("accessToken", accessToken);
+  prefs.putString("refreshToken", refreshToken);
   prefs.putLong("expiryTime", tokenExpiryTime);
+  prefs.putString("accessToken", accessToken);
   prefs.end();
 }
 
@@ -130,6 +134,7 @@ String getAccessTokenFromCode(const String& code) {
     String expiresInStr = doc["expires_in"].as<String>(); 
     unsigned long expiresIn = strtol(expiresInStr.c_str(), NULL, 10); // Convert string to unsigned long
     tokenExpiryTime = millis() / 1000 + expiresIn;
+    Serial.println("Refresh Token: " + String(refreshToken));
     return accessToken;
   } else {
     Serial.println("Error getting access token: " + String(httpCode));
@@ -137,7 +142,8 @@ String getAccessTokenFromCode(const String& code) {
   }
 }
 
-String getValidAccessToken() {
+String getValidAccessToken() {  
+  //Sometimes get hungup here
   Serial.println("Checking if Access Token is Valid");
   if (millis() / 1000 >= tokenExpiryTime) {
     Serial.println("Access token expired. Refreshing...");
@@ -153,9 +159,9 @@ String refreshAccessToken() {
 
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
   
-  String body = "grant_type=refresh_token&refresh_token=" + refreshToken;
-  String authHeader = base64::encode(clientId + String(":") + clientSecret);
-  http.addHeader("Authorization", "Basic " + authHeader);
+  String body = "grant_type=refresh_token&refresh_token=" + String(refreshToken) + "&client_id=" + String(clientId);
+  //String authHeader = base64::encode(clientId + String(":") + clientSecret);
+  //http.addHeader("Authorization", "Basic " + authHeader);
 
   int httpCode = http.POST(body);
   String payload = http.getString();
@@ -180,6 +186,8 @@ String album_url;
 int progress;
 int duration;
 bool explicit_song;
+bool playing; //Implement this
+
 
 String getCurrentlyPlayingTrack() {
   Serial.println("Getting Currently Playing Track");
@@ -200,6 +208,9 @@ String getCurrentlyPlayingTrack() {
 
   int httpCode = http.GET();
   String payload = http.getString();
+
+  Serial.print("HCB: ");
+  Serial.println(httpCode);
 
 
   if (httpCode == 200) {
@@ -223,7 +234,8 @@ String getCurrentlyPlayingTrack() {
     const int i_duration = doc["item"]["duration_ms"];
     //Serial.println("D: " + String(i_duration));
 
-    explicit_song = doc["item"]["explcit"];
+    explicit_song = doc["item"]["explicit"];
+    Serial.println("Explicit:" + String(explicit_song));
 
     //Serial.println("DEBUG 6");
     //delay(20);
@@ -236,21 +248,30 @@ String getCurrentlyPlayingTrack() {
 
     //Serial.println("DEBUG 7");
 
+    //doc.clear();
     Serial.println("Currently playing track: " + String(trackName));
     Serial.println("Artist: " + String(artistName));
     return String(trackName);
   } else {
     //Music is not playing?
-
-    track_title = "Nothing is Playing";
-    track_artist = "-";
-    album_url = "https://raw.githubusercontent.com/Harry-Skerritt/test/refs/heads/main/not_playing_album.jpg";
-    progress = 0;
-    duration = 100;
+    if(httpCode == -11){
+      Serial.println("-11 Recieved. Retrying...");
+      getCurrentlyPlayingTrack();
+    } else if (httpCode == -1){
+      Serial.println("-1 Recieved. Retrying...");
+      getCurrentlyPlayingTrack();
+    } else {
+      track_title = "Nothing is Playing";
+      track_artist = "-";
+      album_url = "https://raw.githubusercontent.com/Harry-Skerritt/test/refs/heads/main/not_playing_album.jpg";
+      progress = 0;
+      duration = 100;
     
+      Serial.println(httpCode);
 
-    Serial.println("Error fetching currently playing track: " + String(httpCode));
-    return String(track_title); //""
+      Serial.println("Error fetching currently playing track: " + String(httpCode));
+      return String(track_title); //""
+    }
   }
 }
 
