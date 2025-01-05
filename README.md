@@ -1,11 +1,11 @@
-![SpotifyMate Logo](https://github.com/Harry-Skerritt/SpotifyMate/blob/main/assets/sm_logo_full.png)
+![SpotifyMate Logo](https://github.com/Harry-Skerritt/SpotifyMate/blob/beta/assets/sm_logo_full.png)
 
 ![Dev Badge](https://img.shields.io/badge/IN_DEVELOPMENT-green)
 
 
 ![Release Badge](https://img.shields.io/badge/Release-beta2.0.0-blue)
 
-![Beta Badge](https://img.shields.io/badge/beta-v2.0.0-dark_green)
+![Beta Badge](https://img.shields.io/badge/beta-v2.1.1-dark_green)
 
 ![PlatformIO Badge](https://img.shields.io/badge/Built_with-PlatformIO-orange)
 
@@ -65,7 +65,10 @@ Alternativly all the above are avalable here:
 [Instructables](https://www.instructables.com/preview/EMD055BM5I72W15/)
 
 ## The Software
-**Current Version: beta-2.1.0**
+**Current Version: beta-2.1.1**
+
+Version beta-2.1.1
+- Fixed a 401 Error
 
 Version: beta-2.1.0
 - Included the loop functionality so the device works with basic functionality

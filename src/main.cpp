@@ -10,6 +10,7 @@
 
 //STILL TO DO --
 //HIGH PRIORITY -> Find the cause of the -11 and -1 HTTPCodes and fix it as its causing crashes and issues
+//HIGH PRIORITY -> The auto renewal of the token doesn't work, need to add 401 support
 //Make it restart once its finished provisioning
 //Make it not need to be reauthroised every time its restarted -> Testing (seems to be okay as of 05/01/24)
 //Add touch screen 

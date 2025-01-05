@@ -1,6 +1,7 @@
 #include "SpotifyAuth.h"
 #include <Preferences.h>
 #include <WiFi.h>
+#include <Graphics.h>
 
 String accessToken = "";
 String refreshToken = "";
@@ -212,8 +213,13 @@ String getCurrentlyPlayingTrack() {
   Serial.print("HCB: ");
   Serial.println(httpCode);
 
-
-  if (httpCode == 200) {
+  if (httpCode == 401){
+    //Bad Token
+    startupGraphics("Refreshing Credentials...");
+    refreshAccessToken(); //Renew the token
+    delay(200); //Allow process time
+    getCurrentlyPlayingTrack(); //Try again
+  } else if (httpCode == 200) {
     //Music is Playing
     DynamicJsonDocument doc(1024);
     deserializeJson(doc, payload);
