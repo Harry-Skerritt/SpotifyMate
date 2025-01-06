@@ -7,6 +7,7 @@
 #include <SpotifyAuth.h>
 #include <qrcode.h>
 #include <TJpg_Decoder.h>
+#include <JPEGDecoder.h> //For Average Colour
 #include <LittleFS.h>
 #include "Web_Fetch.h"
 #include "List_LittleFS.h"
@@ -14,6 +15,7 @@
 
 TFT_eSPI tft = TFT_eSPI(); //Create the screen
 
+//Sprite for the progress bar
 TFT_eSprite progressSprite = TFT_eSprite(&tft);
 
 int32_t toInt(int r, int g, int b) {
@@ -21,6 +23,15 @@ int32_t toInt(int r, int g, int b) {
 			return (((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3));
 		}
 
+
+void isTouch(){
+  uint16_t x = 0, y = 0;
+  bool pressed = tft.getTouch(&x, &y);
+
+  if(pressed){
+    Serial.println("Touched the Touch Screen");
+  }
+}
 
 //Spotify Black 18 18 18
 //Spotify White 255, 255, 255
@@ -38,16 +49,68 @@ bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t* bitmap)
   return 1;
 }
 
-void initialiseGraphics() {
+void touch_calibrate()
+{
+  uint16_t calData[5];
+  uint8_t calDataOK = 0;
 
+  // Calibrate
+  tft.fillScreen(TFT_BLACK);
+  tft.setCursor(20, 0);
+  tft.setTextFont(2);
+  tft.setTextSize(1);
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+
+  tft.println("Touch corners as indicated");
+
+  tft.setTextFont(1);
+  tft.println();
+
+  tft.calibrateTouch(calData, TFT_MAGENTA, TFT_BLACK, 15);
+
+  Serial.println(); Serial.println();
+  Serial.println("// Use this calibration code in setup():");
+  Serial.print("  uint16_t calData[5] = ");
+  Serial.print("{ ");
+
+  for (uint8_t i = 0; i < 5; i++)
+  {
+    Serial.print(calData[i]);
+    if (i < 4) Serial.print(", ");
+  }
+
+  Serial.println(" };");
+  Serial.print("  tft.setTouch(calData);");
+  Serial.println(); Serial.println();
+
+  tft.fillScreen(TFT_BLACK);
+  
+  tft.setTextColor(TFT_GREEN, TFT_BLACK);
+  tft.println("Calibration complete!");
+  tft.println("Calibration code sent to Serial port.");
+
+  delay(4000);
+}
+
+void initialiseGraphics() {
+    //Init Screen
     tft.init(); //Initialise the screen
     tft.resetViewport();
 
     tft.setRotation(0); //Portrait
 
 
+    //touch_calibrate();
+    //uint16_t calData[5] = { 1, 1, 15, 1, 5 };
+    //tft.setTouch(calData);
 
-    //Jp2
+    /*
+      // Replace above line with the code sent to Serial Monitor
+      // once calibration is complete, e.g.:
+      uint16_t calData[5] = { 286, 3534, 283, 3600, 6 };
+      tft.setTouch(calData);
+    */
+
     if(!LittleFS.begin()){
       Serial.println("LitleFS Init Failed");
       while(1) yield();
@@ -231,7 +294,7 @@ void drawProgressBar(int x, int y, int width, int height, int currentTime, int d
   progressSprite.drawRect(x, y, width, height, TFT_WHITE);
 }
 
-void drawProgressSprite(int progress_ms, int duration_ms){
+void drawProgressSprite(int progress_ms, int duration_ms, uint8_t avgR, uint8_t avgG, uint8_t avgB){
   //Get duration in terms of minutes and seconds
   Serial.println("P: " + String(progress_ms));
   Serial.println("D: " + String(duration_ms));
@@ -239,7 +302,8 @@ void drawProgressSprite(int progress_ms, int duration_ms){
   String progressTime = msToFormattedTime(progress_ms);
   String durationTime = msToFormattedTime(duration_ms);
 
-  progressSprite.fillRect(0, 0, progressSprite.width(), progressSprite.height(), 0x0000); //Fill the sprite before drawing
+  //Check if its empty if its transparent
+  //progressSprite.fillRect(0, 0, progressSprite.width(), progressSprite.height(), toInt(avgR, avgB, avgG)); //Fill the sprite before drawing <- Will need to change if the avg colour works
 
   //Draw progress bar
   progressSprite.setTextColor(toInt(255, 255, 255));
@@ -259,36 +323,137 @@ void drawProgressSprite(int progress_ms, int duration_ms){
 
 //18 Characters
 
-void getAlbumArt(String url){
+//Could be the cause of errors -> Not sure
+bool getAverageColorFromFile(const char* filePath, uint8_t& avgR, uint8_t& avgG, uint8_t& avgB) {
+    // Initialize LittleFS only once
+    static bool fsInitialized = false;
+    if (!fsInitialized) {
+        if (!LittleFS.begin()) {
+            Serial.println("Failed to initialize LittleFS");
+            return false;
+        }
+        fsInitialized = true;
+    }
 
+    // Open the file
+    File file = LittleFS.open(filePath, "r");
+    if (!file) {
+        Serial.printf("Failed to open file: %s\n", filePath);
+        return false;
+    }
+
+    // Decode the JPEG file
+    if (!JpegDec.decodeFsFile(file)) {
+        Serial.println("Failed to decode JPEG image");
+        file.close();
+        return false;
+    }
+
+    uint32_t sumR = 0, sumG = 0, sumB = 0;
+    uint32_t pixelCount = 0;
+
+    // Process the image
+    while (JpegDec.read()) { // Read each MCU block
+        uint16_t* pImg = JpegDec.pImage;
+        for (uint16_t y = 0; y < JpegDec.MCUHeight; y++) {
+            uint16_t offsetY = JpegDec.MCUy * JpegDec.MCUHeight + y;
+            if (offsetY >= JpegDec.height) break;
+
+            for (uint16_t x = 0; x < JpegDec.MCUWidth; x++) {
+                uint16_t offsetX = JpegDec.MCUx * JpegDec.MCUWidth + x;
+                if (offsetX >= JpegDec.width) break;
+
+                uint16_t color = pImg[y * JpegDec.MCUWidth + x];
+                uint8_t r = (color & 0xF800) >> 8;
+                uint8_t g = (color & 0x07E0) >> 3;
+                uint8_t b = (color & 0x001F) << 3;
+
+                sumR += r;
+                sumG += g;
+                sumB += b;
+                pixelCount++;
+            }
+        }
+    }
+
+    // Clean up
+    file.close();
+    JpegDec.abort(); // Properly release decoder resources
+
+    if (pixelCount == 0) {
+        Serial.println("No pixels were processed");
+        return false;
+    }
+
+    // Calculate average color
+    avgR = sumR / pixelCount;
+    avgG = sumG / pixelCount;
+    avgB = sumB / pixelCount;
+
+    // Compute brightness using a common formula
+    float brightness = 0.2126f * avgR + 0.7152f * avgG + 0.0722f * avgB;
+
+    // Threshold for white or near-white (255 is full white)
+    const float whiteThreshold = 220.0f; // Adjust as needed
+    if (brightness > whiteThreshold) {
+        // Make the color darker
+        avgR *= 0.8; // Reduce by 20%
+        avgG *= 0.8;
+        avgB *= 0.8;
+        Serial.println("Color was near white, adjusted to a darker equivalent.");
+    } else {
+        // Make it 10% darker as usual
+        avgR *= 0.9;
+        avgG *= 0.9;
+        avgB *= 0.9;
+    }
+
+    return true;
+}
+
+const char* img_path = "/album.jpg";
+void getAlbumArt(String url, uint8_t &avgR, uint8_t &avgG, uint8_t &avgB){
   //listLittleFS();
 
-  if(LittleFS.exists("/album.jpg") == true){
+  if(LittleFS.exists(img_path) == true){
     Serial.println("Removing File!");
-    LittleFS.remove("/album.jpg");
+    LittleFS.remove(img_path);
   }
 
-  bool loaded_ok = getFile(url, "/album.jpg");
+  bool loaded_ok = getFile(url, img_path);
 
   //listLittleFS();
 
+  //Get Average Colour
+  if(getAverageColorFromFile(img_path, avgR, avgG, avgB)){
+    //Gets the average colour
+    tft.fillScreen(toInt(avgR, avgG, avgB)); //Average Colour
+  } else {
+    //Doesn't get the average colour
+    tft.fillScreen(0x0000); //Black
+  }
+
+
   TJpgDec.setJpgScale(4);
-  TJpgDec.drawFsJpg(43, 16, "/album.jpg", LittleFS);
+  TJpgDec.drawFsJpg(43, 16, img_path, LittleFS);
 
 
 }
 
+
 String currentlyPlayingURL = "";
 String nextSongURL = "";
 String currentSongTitle = "";
+uint8_t avgR, avgG, avgB;
 
 void drawCurrentPlaying(String title, String artist, String url, int progress_ms, int duration_ms, bool explicit_song){
   Serial.begin(115200);
+  
 
   if(url == currentlyPlayingURL && currentSongTitle == title){
     //The same song is playing as before
     //Dont update anything but the sprite
-    drawProgressSprite(progress_ms, duration_ms);
+    drawProgressSprite(progress_ms, duration_ms, avgR, avgG, avgB);
   } else {
     //The song has changed - change everything!
     tft.fillScreen(0x0000); //Set background
@@ -298,11 +463,11 @@ void drawCurrentPlaying(String title, String artist, String url, int progress_ms
       //The already cached song is playing
       //Load the cached image then continue
       TJpgDec.setJpgScale(4);
-      TJpgDec.drawFsJpg(43, 16, "/album.jpg", LittleFS);
+      TJpgDec.drawFsJpg(43, 16, img_path, LittleFS);
       currentlyPlayingURL = url;
     } else {
       // A different song is playing
-      getAlbumArt(url);
+      getAlbumArt(url, avgR, avgG, avgB);
       currentlyPlayingURL = url;
     }
 
@@ -339,7 +504,7 @@ void drawCurrentPlaying(String title, String artist, String url, int progress_ms
       tft.drawString(title.c_str(), tft.width()/2, 196);
     }  
   
-    tft.setTextColor(toInt(155, 155, 155));
+    tft.setTextColor(0xffff); //toInt(155, 155, 155)
     if(artist.length() > 20){
       tft.setTextSize(1);
       tft.setTextDatum(TC_DATUM);
@@ -357,7 +522,7 @@ void drawCurrentPlaying(String title, String artist, String url, int progress_ms
     }
 
     //Progress bar
-    drawProgressSprite(progress_ms, duration_ms);
+    drawProgressSprite(progress_ms, duration_ms, avgR, avgG, avgB);
     //All drawn at this point
   }
 }

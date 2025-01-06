@@ -9,10 +9,10 @@
 
 
 //STILL TO DO --
-//HIGH PRIORITY -> Find the cause of the -11 and -1 HTTPCodes and fix it as its causing crashes and issues
-//HIGH PRIORITY -> The auto renewal of the token doesn't work, need to add 401 support
+//HIGH PRIORITY -> Find the cause of the -11 and -1 HTTPCodes and fix it as its causing crashes and issues - Gets -11, retrys, Guru Core Dump InstrFetchProhibited, since remove doc.clear() only 1 -11.
+//HIGH PRIORITY -> The auto renewal of the token doesn't work, need to add 401 support -> No Issues as of 06/01/25, been running fine for a few hours - More Testing needed
 //Make it restart once its finished provisioning
-//Make it not need to be reauthroised every time its restarted -> Testing (seems to be okay as of 05/01/24)
+//Make it not need to be reauthroised every time its restarted -> Testing (seems to be okay as of 05/01/25)
 //Add touch screen 
 //Add play/pause
 //Add add to liked songs
@@ -30,14 +30,13 @@
 //Other than that it 'works'--
 
 //Not Essential but would be VERY nice to have --
-//Make it get the next song's image in the queue to allow smooth transition -> Weird Empty API Responses with 200 Code
-//Some handling for if the next song is the one expected -> Weird Empty API Responses with 200 Code
-//Background the average colour of the album art (Very Optional)
+//Make it get the next song's image in the queue to allow smooth transition -> Weird Empty API Responses with 200 Code (Not Possible)
+//Some handling for if the next song is the one expected -> Weird Empty API Responses with 200 Code (Not Possible)
 
 //IF POSSIBLE --
 //Make getting the album image quicker (~11s currently)
 //Progress bar about 3s behind (if can update more 'real time' do)
-//Background the avg colour of album art
+//Background the avg colour of album art -> Done - Needs some final testing for the progress bar and no errors
 
 WiFiManager wm;
 bool setupCompleted = false; //Only true if on wifi and connected to spotify
@@ -153,4 +152,6 @@ void loop() {
         drawCurrentPlaying(track, artist, albumUrl, progress, duration, explicit_song);     
         delay(2000); //Refresh every 2 seconds (Any quicker brings -11 codes?)
     }
+
+    isTouch();
 }

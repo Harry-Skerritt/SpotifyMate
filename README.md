@@ -39,7 +39,7 @@ The device hosts its own webserver allowing for this provisioning to be easy to 
 ## How does it work?
 The SpotifyMate firmware, has a GUI which makes the setup and use of the device pretty simple, but to explain a bit more about how the deice works: 
 
-- The device will enter a 'provisiong mode' when first powered on, or without an active network connection, which allows the user to connect to the device and add it to their home WiFi network. 
+- The device will enter a 'provisioning mode' when first powered on, or without an active network connection, which allows the user to connect to the device and add it to their home WiFi network. 
 
 - The device will also need linking to the users Spotify account, which can be done through a QR code displayed on screen.
 
@@ -53,12 +53,15 @@ SpotifyMate is based around and would not function without several libraries. Th
 
 [WiFiManager](https://github.com/tzapu/WiFiManager) library by tzapu on Github, for WiFi provisioning.
 
-[TFT_eSPI](https://github.com/Bodmer/TFT_eSPI) library by Bodmer on Github, for all of the graphics.
+[TFT_eSPI](https://github.com/Bodmer/TFT_eSPI) library by Bodmer on Github, for all of the graphics, and touch screen.
+
+~~[XPT2046_Touchscreen](https://github.com/PaulStoffregen/XPT2046_Touchscreen) library by PaulStoffregen for the touch functionality~~
 
 [TJpg_Decoder](https://github.com/Bodmer/TJpg_Decoder) library by Bodmer on Github, for pushing JPG's from a URL to the screen.
 
 ## How to make
 Code: [Right Here!](https://github.com/Harry-Skerritt/SpotifyMate/tree/main)
+
 STLs: [Right Here!](https://github.com/Harry-Skerritt/SpotifyMate/tree/main)
 
 Alternativly all the above are avalable here:
