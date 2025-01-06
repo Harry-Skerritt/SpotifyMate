@@ -24,15 +24,6 @@ int32_t toInt(int r, int g, int b) {
 		}
 
 
-void isTouch(){
-  uint16_t x = 0, y = 0;
-  bool pressed = tft.getTouch(&x, &y);
-
-  if(pressed){
-    Serial.println("Touched the Touch Screen");
-  }
-}
-
 //Spotify Black 18 18 18
 //Spotify White 255, 255, 255
 //Spotify Green 30 215 96
@@ -49,67 +40,12 @@ bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t* bitmap)
   return 1;
 }
 
-void touch_calibrate()
-{
-  uint16_t calData[5];
-  uint8_t calDataOK = 0;
-
-  // Calibrate
-  tft.fillScreen(TFT_BLACK);
-  tft.setCursor(20, 0);
-  tft.setTextFont(2);
-  tft.setTextSize(1);
-  tft.setTextColor(TFT_WHITE, TFT_BLACK);
-
-  tft.println("Touch corners as indicated");
-
-  tft.setTextFont(1);
-  tft.println();
-
-  tft.calibrateTouch(calData, TFT_MAGENTA, TFT_BLACK, 15);
-
-  Serial.println(); Serial.println();
-  Serial.println("// Use this calibration code in setup():");
-  Serial.print("  uint16_t calData[5] = ");
-  Serial.print("{ ");
-
-  for (uint8_t i = 0; i < 5; i++)
-  {
-    Serial.print(calData[i]);
-    if (i < 4) Serial.print(", ");
-  }
-
-  Serial.println(" };");
-  Serial.print("  tft.setTouch(calData);");
-  Serial.println(); Serial.println();
-
-  tft.fillScreen(TFT_BLACK);
-  
-  tft.setTextColor(TFT_GREEN, TFT_BLACK);
-  tft.println("Calibration complete!");
-  tft.println("Calibration code sent to Serial port.");
-
-  delay(4000);
-}
-
 void initialiseGraphics() {
     //Init Screen
     tft.init(); //Initialise the screen
     tft.resetViewport();
 
     tft.setRotation(0); //Portrait
-
-
-    //touch_calibrate();
-    //uint16_t calData[5] = { 1, 1, 15, 1, 5 };
-    //tft.setTouch(calData);
-
-    /*
-      // Replace above line with the code sent to Serial Monitor
-      // once calibration is complete, e.g.:
-      uint16_t calData[5] = { 286, 3534, 283, 3600, 6 };
-      tft.setTouch(calData);
-    */
 
     if(!LittleFS.begin()){
       Serial.println("LitleFS Init Failed");
@@ -303,7 +239,7 @@ void drawProgressSprite(int progress_ms, int duration_ms, uint8_t avgR, uint8_t 
   String durationTime = msToFormattedTime(duration_ms);
 
   //Check if its empty if its transparent
-  //progressSprite.fillRect(0, 0, progressSprite.width(), progressSprite.height(), toInt(avgR, avgB, avgG)); //Fill the sprite before drawing <- Will need to change if the avg colour works
+  progressSprite.fillRect(0, 0, progressSprite.width(), progressSprite.height(), toInt(avgR, avgB, avgG)); //Fill the sprite before drawing <- Will need to change if the avg colour works
 
   //Draw progress bar
   progressSprite.setTextColor(toInt(255, 255, 255));
@@ -374,6 +310,7 @@ bool getAverageColorFromFile(const char* filePath, uint8_t& avgR, uint8_t& avgG,
                 pixelCount++;
             }
         }
+        yield();
     }
 
     // Clean up
@@ -418,9 +355,11 @@ void getAlbumArt(String url, uint8_t &avgR, uint8_t &avgG, uint8_t &avgB){
   if(LittleFS.exists(img_path) == true){
     Serial.println("Removing File!");
     LittleFS.remove(img_path);
+    yield();
   }
 
   bool loaded_ok = getFile(url, img_path);
+  yield();
 
   //listLittleFS();
 
@@ -436,15 +375,14 @@ void getAlbumArt(String url, uint8_t &avgR, uint8_t &avgG, uint8_t &avgB){
 
   TJpgDec.setJpgScale(4);
   TJpgDec.drawFsJpg(43, 16, img_path, LittleFS);
-
-
+  yield();
 }
 
 
 String currentlyPlayingURL = "";
 String nextSongURL = "";
 String currentSongTitle = "";
-uint8_t avgR, avgG, avgB;
+uint8_t avgR = 0, avgG = 0, avgB = 0;
 
 void drawCurrentPlaying(String title, String artist, String url, int progress_ms, int duration_ms, bool explicit_song){
   Serial.begin(115200);
@@ -464,10 +402,12 @@ void drawCurrentPlaying(String title, String artist, String url, int progress_ms
       //Load the cached image then continue
       TJpgDec.setJpgScale(4);
       TJpgDec.drawFsJpg(43, 16, img_path, LittleFS);
+      yield();
       currentlyPlayingURL = url;
     } else {
       // A different song is playing
       getAlbumArt(url, avgR, avgG, avgB);
+      yield();
       currentlyPlayingURL = url;
     }
 
@@ -499,6 +439,7 @@ void drawCurrentPlaying(String title, String artist, String url, int progress_ms
       tft.setTextWrap(true, false);
       tft.setCursor(0, 196);
       tft.print(title.c_str());
+      yield();
     } else {
       //Less than 20
       tft.drawString(title.c_str(), tft.width()/2, 196);

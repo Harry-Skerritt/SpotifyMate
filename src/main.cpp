@@ -130,9 +130,8 @@ void setup() {
 
         if(wm.getWiFiIsSaved() == true){
             //Once Done, Restart
+            Serial.println("Wifi Saved is now true");
         }
-        
-        
     }
 }
 
@@ -152,6 +151,4 @@ void loop() {
         drawCurrentPlaying(track, artist, albumUrl, progress, duration, explicit_song);     
         delay(2000); //Refresh every 2 seconds (Any quicker brings -11 codes?)
     }
-
-    isTouch();
 }

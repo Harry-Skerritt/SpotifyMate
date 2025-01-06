@@ -8,8 +8,8 @@ String refreshToken = "";
 unsigned long tokenExpiryTime = 0; // Expiry time in seconds since epoch
 
 
-const char* clientId = "517041868f9544a0bd757e847ffa3256"; //Remove before any commits -> Use the FILE
-const char* clientSecret = "8e97936b91944a0cb385534884ef83b4"; //Remove before any commits -> Use the FILE
+const char* clientId = "xxx"; //Remove before any commits -> Use the FILE
+const char* clientSecret = "xxx"; //Remove before any commits -> Use the FILE
 const char* redirectUri = "http://spotify-mate.local/callback";
 const char* scopes = "user-read-currently-playing user-read-playback-state user-modify-playback-state";
 
@@ -182,19 +182,20 @@ String refreshAccessToken() {
   }
 }
 
-String track_title;
-String track_artist;
-String album_url;
-int progress;
-int duration;
-bool explicit_song;
+String track_title = "";
+String track_artist = "";
+String album_url = ""; //Needs a default value
+int progress = 0 ;
+int duration = 0 ;
+bool explicit_song = false;
 bool playing; //Implement this
 
 
 String getCurrentlyPlayingTrack() {
-  if(WiFi.isConnected() != WL_CONNECTED){
+  if(WiFi.status() != WL_CONNECTED){
     //If wifi is not connected
     startupGraphics("Device is Offline! - Restart");
+    return "";
   } else {
     //Device is online
     Serial.println("Getting Currently Playing Track");
@@ -215,6 +216,7 @@ String getCurrentlyPlayingTrack() {
 
     int httpCode = http.GET();
     String payload = http.getString();
+    yield();
 
     Serial.print("HCB: ");
     Serial.println(httpCode);
@@ -225,6 +227,7 @@ String getCurrentlyPlayingTrack() {
       refreshAccessToken(); //Renew the token
       delay(200); //Allow process time
       getCurrentlyPlayingTrack(); //Try again
+      yield();
     } else if (httpCode == 200) {
       //Music is Playing
       DynamicJsonDocument doc(1024);
@@ -268,10 +271,12 @@ String getCurrentlyPlayingTrack() {
       //Music is not playing?
       if(httpCode == -11){
         Serial.println("-11 Recieved. Retrying...");
-        getCurrentlyPlayingTrack();
+        //getCurrentlyPlayingTrack();
+        //yield();
       } else if (httpCode == -1){
         Serial.println("-1 Recieved. Retrying...");
-        getCurrentlyPlayingTrack();
+        //getCurrentlyPlayingTrack();
+        //yield();
       } else {
         track_title = "Nothing is Playing";
         track_artist = "-";
