@@ -5,7 +5,6 @@
 #include <FS.h>
 #include <HTTPClient.h>
 #include <SpotifyAuth.h>
-#include <qrcode.h>
 #include <TJpg_Decoder.h>
 #include <JPEGDecoder.h> //For Average Colour
 #include <LittleFS.h>
@@ -239,7 +238,7 @@ void drawProgressSprite(int progress_ms, int duration_ms, uint8_t avgR, uint8_t 
   String durationTime = msToFormattedTime(duration_ms);
 
   //Check if its empty if its transparent
-  progressSprite.fillRect(0, 0, progressSprite.width(), progressSprite.height(), toInt(avgR, avgB, avgG)); //Fill the sprite before drawing <- Will need to change if the avg colour works
+  progressSprite.fillRect(0, 0, progressSprite.width(), progressSprite.height(), toInt(avgR, avgG, avgB)); //Fill the sprite before drawing <- Will need to change if the avg colour works
 
   //Draw progress bar
   progressSprite.setTextColor(toInt(255, 255, 255));

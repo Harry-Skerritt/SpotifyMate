@@ -2,18 +2,21 @@
 #include <Preferences.h>
 #include <WiFi.h>
 #include <Graphics.h>
+#include <WiFiClientSecure.h>
 
 String accessToken = "";
 String refreshToken = "";
 unsigned long tokenExpiryTime = 0; // Expiry time in seconds since epoch
 
 
-const char* clientId = "xxx"; //Remove before any commits -> Use the FILE
-const char* clientSecret = "xxx"; //Remove before any commits -> Use the FILE
+const char* clientId = "517041868f9544a0bd757e847ffa3256"; //Remove before any commits -> Use the FILE
+const char* clientSecret = "8e97936b91944a0cb385534884ef83b4"; //Remove before any commits -> Use the FILE
 const char* redirectUri = "http://spotify-mate.local/callback";
-const char* scopes = "user-read-currently-playing user-read-playback-state user-modify-playback-state";
+const char* scopes = "user-read-currently-playing user-read-playback-state user-modify-playback-state user-library-modify";
 
 WebServer server(80);
+
+String currentTrackId = "";
 
 void convertFromJson(JsonVariantConst src, tm& dst) {
   strptime(src.as<const char*>(), "%FT%TZ", &dst);
@@ -182,6 +185,57 @@ String refreshAccessToken() {
   }
 }
 
+
+bool addCurrentSongToLiked() {
+    if (currentTrackId.isEmpty()) {
+        Serial.println("Track ID is empty. Cannot add to liked songs.");
+        return false;
+    }
+
+    String token = getValidAccessToken(); // Ensure the token is valid before making API calls
+  
+    if (token == "") {
+      Serial.println("No valid access token.");
+      return "";
+    }
+
+
+    // Spotify API endpoint for adding songs to the library
+    String endpoint = "https://api.spotify.com/v1/me/tracks";
+
+    // Create an HTTPS client
+    WiFiClientSecure client;
+    client.setInsecure(); // Use this if you don't want to verify SSL. Replace with certificate validation in production.
+
+    HTTPClient https;
+    if (!https.begin(client, endpoint)) {
+        Serial.println("Failed to connect to Spotify API.");
+        return false;
+    }
+
+    // Set headers
+    https.addHeader("Authorization", "Bearer " + token);
+    https.addHeader("Content-Type", "application/json");
+
+    // Prepare JSON payload with the track ID
+    String payload = "{\"ids\":[\"" + currentTrackId + "\"]}";
+
+    // Send POST request
+    int httpResponseCode = https.POST(payload);
+
+    if (httpResponseCode == 200 || httpResponseCode == 204) {
+        Serial.println("Song successfully added to liked songs.");
+        https.end();
+        return true;
+    } else {
+        Serial.printf("Failed to add song to liked songs. HTTP code: %d\n", httpResponseCode);
+        Serial.println("Response: " + https.getString());
+    }
+
+    https.end();
+    return false;
+}
+
 String track_title = "";
 String track_artist = "";
 String album_url = ""; //Needs a default value
@@ -189,7 +243,6 @@ int progress = 0 ;
 int duration = 0 ;
 bool explicit_song = false;
 bool playing; //Implement this
-
 
 String getCurrentlyPlayingTrack() {
   if(WiFi.status() != WL_CONNECTED){
@@ -206,89 +259,101 @@ String getCurrentlyPlayingTrack() {
       return "";
     }
 
+    Serial.println("###Just before the http is send");
+
     HTTPClient http;
+    WiFiClientSecure wifiClient;
+    wifiClient.setInsecure();
+    wifiClient.setTimeout(10000); //10 Second Timeout
     String url = "https://api.spotify.com/v1/me/player/currently-playing";  // Get currently playing track
 
 
-    http.begin(url);
-    http.addHeader("Authorization", "Bearer " + token);
+    if(http.begin(wifiClient, url)) {
+      http.addHeader("Authorization", "Bearer " + token);
 
 
-    int httpCode = http.GET();
-    String payload = http.getString();
-    yield();
-
-    Serial.print("HCB: ");
-    Serial.println(httpCode);
-
-    if (httpCode == 401){
-      //Bad Token
-      startupGraphics("Refreshing Credentials...");
-      refreshAccessToken(); //Renew the token
-      delay(200); //Allow process time
-      getCurrentlyPlayingTrack(); //Try again
+      int httpCode = http.GET();
+      String payload = http.getString();
       yield();
-    } else if (httpCode == 200) {
-      //Music is Playing
-      DynamicJsonDocument doc(1024);
-      deserializeJson(doc, payload);
 
-      //Serial.println("DEBUG 5");
-      const char* trackName = doc["item"]["name"];
-      //Serial.println(trackName);
+      Serial.print("HCB: ");
+      Serial.println(httpCode);
 
-      const char* artistName = doc["item"]["artists"][0]["name"];
-      //Serial.println(artistName);
+      if (httpCode == 401){
+        //Bad Token
+        startupGraphics("Refreshing Credentials...");
+        refreshAccessToken(); //Renew the token
+        delay(200); //Allow process time
+        getCurrentlyPlayingTrack(); //Try again
+        yield();
+        return "";
+      } else if (httpCode == 200) {
+        //Music is Playing
+        DynamicJsonDocument doc(1024);
+        deserializeJson(doc, payload);
 
-      const char* albumURL = doc["item"]["album"]["images"][0]["url"];
-      //Serial.println(albumURL);
+        //Serial.println("DEBUG 5");
+        const char* trackName = doc["item"]["name"];
+        //Serial.println(trackName);
 
-      const int i_progress = doc["progress_ms"];
-      //Serial.println("P: " + String(i_progress));
+        const char* trackID = doc["item"]["id"];
 
-      const int i_duration = doc["item"]["duration_ms"];
-      //Serial.println("D: " + String(i_duration));
+        const char* artistName = doc["item"]["artists"][0]["name"];
+        //Serial.println(artistName);
 
-      explicit_song = doc["item"]["explicit"];
-      Serial.println("Explicit:" + String(explicit_song));
+        const char* albumURL = doc["item"]["album"]["images"][0]["url"];
+        //Serial.println(albumURL);
 
-      //Serial.println("DEBUG 6");
-      //delay(20);
+        const int i_progress = doc["progress_ms"];
+        //Serial.println("P: " + String(i_progress));
 
-      track_title = String(trackName);
-      track_artist = String(artistName);
-      album_url = String(albumURL);
-      progress = i_progress;
-      duration = i_duration;
+        const int i_duration = doc["item"]["duration_ms"];
+        //Serial.println("D: " + String(i_duration));
 
-      //Serial.println("DEBUG 7");
+        explicit_song = doc["item"]["explicit"];
+        Serial.println("Explicit:" + String(explicit_song));
 
-      //doc.clear();
-      Serial.println("Currently playing track: " + String(trackName));
-      Serial.println("Artist: " + String(artistName));
-      return String(trackName);
-    } else {
-      //Music is not playing?
-      if(httpCode == -11){
-        Serial.println("-11 Recieved. Retrying...");
-        //getCurrentlyPlayingTrack();
-        //yield();
-      } else if (httpCode == -1){
-        Serial.println("-1 Recieved. Retrying...");
-        //getCurrentlyPlayingTrack();
-        //yield();
+        //Serial.println("DEBUG 6");
+        //delay(20);
+
+        track_title = String(trackName);
+        currentTrackId = String(trackID);
+        track_artist = String(artistName);
+        album_url = String(albumURL);
+        progress = i_progress;
+        duration = i_duration;
+
+        //Serial.println("DEBUG 7");
+
+        //doc.clear();
+        Serial.println("Currently playing track: " + String(trackName));
+        Serial.println("Artist: " + String(artistName));
+        return String(trackName);
       } else {
-        track_title = "Nothing is Playing";
-        track_artist = "-";
-        album_url = "https://raw.githubusercontent.com/Harry-Skerritt/test/refs/heads/main/not_playing_album.jpg";
-        progress = 0;
-        duration = 100;
+        //Music is not playing?
+        if(httpCode == -11){
+          Serial.println("-11 Recieved.");
+          //getCurrentlyPlayingTrack();
+          //yield();
+        } else if (httpCode == -1){
+          Serial.println("-1 Recieved.");
+          //getCurrentlyPlayingTrack();
+          //yield();
+        } else {
+          track_title = "Nothing is Playing";
+          track_artist = "-";
+          album_url = "https://raw.githubusercontent.com/Harry-Skerritt/test/refs/heads/main/not_playing_album.jpg";
+          progress = 0;
+          duration = 100;
     
-        Serial.println(httpCode);
+          Serial.println(httpCode);
 
-        Serial.println("Error fetching currently playing track: " + String(httpCode));
-        return String(track_title); //""
+          Serial.println("Error fetching currently playing track: " + String(httpCode));
+          return String(track_title); //""
+        }
       }
+    } else {
+      Serial.println("HTTP connection failed");
     }
   }
 }

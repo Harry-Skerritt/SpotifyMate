@@ -25,6 +25,7 @@ void loadSpotifyAPIKeys();
 void loadSpotifyToken();
 
 void authSpotify();
+bool addCurrentSongToLiked();
 String getCurrentlyPlayingTrack();
 String getCurrentlyPlayingArtist();
 String getAlbumUrl();

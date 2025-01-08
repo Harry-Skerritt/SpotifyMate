@@ -11,6 +11,9 @@
 //STILL TO DO --
 //HIGH PRIORITY -> Find the cause of the -11 and -1 HTTPCodes and fix it as its causing crashes and issues - Gets -11, retrys, Guru Core Dump InstrFetchProhibited, since remove doc.clear() only 1 -11.
 //HIGH PRIORITY -> The auto renewal of the token doesn't work, need to add 401 support -> No Issues as of 06/01/25, been running fine for a few hours - More Testing needed
+//HIGH PRIORITY -> Check Memory Useage and Allocation
+//HIGH PRIORITY -> Make Improvements to reliability
+//HIGH PRIORITY -> Check that currentSong isnt reset anywhere
 //Make it restart once its finished provisioning
 //Make it not need to be reauthroised every time its restarted -> Testing (seems to be okay as of 05/01/25)
 //Add touch screen 
@@ -41,11 +44,18 @@
 WiFiManager wm;
 bool setupCompleted = false; //Only true if on wifi and connected to spotify
 
+//Like Song Functionality
+#define LIKE_SONG_PIN 12
+int like_song_state ;
+
 void setup() {
     Serial.begin(115200);
     const char* ssid = "SpotifyMate-AP";
     const String hostname = "spotify-mate";
     Preferences prefs;
+
+    pinMode(LIKE_SONG_PIN, INPUT_PULLUP);
+
 
 
     initialiseGraphics(); //Initialise the Graphical elements
@@ -108,6 +118,8 @@ void setup() {
         Serial.println("AT: " + l_accessToken);
         Serial.println("ET: " + String(tokenExpiryTime));
 
+        //authSpotify();
+
         //Fix not needing to auth everytime
         if(l_refreshToken == "" || l_accessToken == ""){
             //There is no access token (assume not authorised)
@@ -135,11 +147,34 @@ void setup() {
     }
 }
 
+unsigned long lastScreenUpdate = 0; //Tracks when the screen was last updated
+const unsigned long updateInterval = 2000; //Time in ms for the screen update delay
+
 void loop() {
     wm.process();
 
+    //Checked Constantly
+    //Like Songs
+    like_song_state = digitalRead(LIKE_SONG_PIN);
+    if(like_song_state == LOW){
+        Serial.println("Like Song Button Clicked");
+        if(addCurrentSongToLiked()) {
+            //Song added Successfully do something graphically
+            Serial.println("Song Added Successfully");
+        } else {
+            //Song wasn't added successfully do something graphically
+            Serial.println("Failed to add Song");
+        }
 
-    if(setupCompleted){
+        like_song_state = !like_song_state;  //Move to the function which adds the liked song
+    }
+
+    //Performed every 2 seconsd
+    //The App has correctly initialised
+    if(setupCompleted && (millis() - lastScreenUpdate >= updateInterval)){
+        lastScreenUpdate = millis(); //Update the timestamp
+
+        //Handle The Screen
         String track = getCurrentlyPlayingTrack();
         String artist = getCurrentlyPlayingArtist();
         String albumUrl = getAlbumUrl();
@@ -149,6 +184,6 @@ void loop() {
 
 
         drawCurrentPlaying(track, artist, albumUrl, progress, duration, explicit_song);     
-        delay(2000); //Refresh every 2 seconds (Any quicker brings -11 codes?)
+        //delay(2000); //Refresh every 2 seconds (Any quicker brings -11 codes?)
     }
 }
