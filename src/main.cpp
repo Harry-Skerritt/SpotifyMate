@@ -8,39 +8,6 @@
 #include <Preferences.h>
 
 
-//STILL TO DO --
-//HIGH PRIORITY -> Find the cause of the -11 and -1 HTTPCodes and fix it as its causing crashes and issues - Gets -11, retrys, Guru Core Dump InstrFetchProhibited, since remove doc.clear() only 1 -11.
-//HIGH PRIORITY -> The auto renewal of the token doesn't work, need to add 401 support -> No Issues as of 06/01/25, been running fine for a few hours - More Testing needed
-//HIGH PRIORITY -> Check Memory Useage and Allocation
-//HIGH PRIORITY -> Make Improvements to reliability
-//HIGH PRIORITY -> Check that currentSong isnt reset anywhere
-//Make it restart once its finished provisioning
-//Make it not need to be reauthroised every time its restarted -> Testing (seems to be okay as of 05/01/25)
-//Add touch screen 
-//Add play/pause
-//Add add to liked songs
-//Make the main screen sprites, so only the bar can be updated and not the whole screen -> Done#
-//Fix the explicit not loading -> Done (typo)#
-//Add the logo to the loading pages -> Done#
-//QR Code for spotify auth
-//Change font size of artist if more than 20 chars -> Done#
-//Every 20-40 mins it drops off - Fix
-//Look at the check key is valid function -> Testing (I think) (seems to be okay as of 05/01/24)
-//Time shows as 0:8 not 0:08 -> Done#
-//Remove Unnecessary or DEBUG Serial Prints
-//Proper not playing support
-//5 min timeout for not playing
-//Other than that it 'works'--
-
-//Not Essential but would be VERY nice to have --
-//Make it get the next song's image in the queue to allow smooth transition -> Weird Empty API Responses with 200 Code (Not Possible)
-//Some handling for if the next song is the one expected -> Weird Empty API Responses with 200 Code (Not Possible)
-
-//IF POSSIBLE --
-//Make getting the album image quicker (~11s currently)
-//Progress bar about 3s behind (if can update more 'real time' do)
-//Background the avg colour of album art -> Done - Needs some final testing for the progress bar and no errors
-
 WiFiManager wm;
 bool setupCompleted = false; //Only true if on wifi and connected to spotify
 
