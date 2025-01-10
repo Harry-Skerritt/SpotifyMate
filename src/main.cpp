@@ -1,41 +1,45 @@
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include <Arduino.h>
 #include <Graphics.h>
-#include <array>
 #include <ESPmDNS.h>
 #include <SpotifyAuth.h>
-
 #include <esp_heap_caps.h>
-
-//Spotify Related
 #include <Wifi.h>
-//#include <WebServer.h>
-//#include <WiFiClient.h>
-//#include <WiFiClientSecure.h>
+#include <Preferences.h>
 
-//#include <SpotifyArduino.h> //https://github.com/witnessmenow/spotify-api-arduino/tree/main
-//#include <SpotifyArduinoCert.h> //https://github.com/witnessmenow/spotify-api-arduino/tree/main
-//#include <ArduinoJson.h>
 
 WiFiManager wm;
+bool setupCompleted = false; //Only true if on wifi and connected to spotify
+
+//Like Song Functionality
+#define LIKE_SONG_PIN 12
+int like_song_state ;
 
 void setup() {
     Serial.begin(115200);
-    //Serial.begin(esp_get_free_heap_size());
-
-    //startSpiffs();
-
     const char* ssid = "SpotifyMate-AP";
     const String hostname = "spotify-mate";
+    Preferences prefs;
+
+    pinMode(LIKE_SONG_PIN, INPUT_PULLUP);
+
+
+
     initialiseGraphics(); //Initialise the Graphical elements
     startupGraphics("Starting Up...");
     delay(1000);
 
+    //String clientId = "xxx"; 
+    //String clientSecret = "xxx";
+    //putSpotifyAPIKeys(clientId, clientSecret);
+
     
-    
+    String l_refreshToken = "";
+    String l_accessToken = "";
+    long l_tokenExpiryTime = 0;
 
     startupGraphics("Getting Credentials...");
-    //read_in_keys_spiffs();
+    //loadSpotifyAPIKeys(); //Check this is the right position
     delay(500);
 
     WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STA+AP    
@@ -59,9 +63,6 @@ void setup() {
         Serial.println("Connected to Wifi!!");
         startupGraphics("WiFi Connected!");
 
-
-        //Need to handle refresh token.
-
         //mDNS Setup
         if(!MDNS.begin(hostname)) {
             Serial.println("Error setting up MDNS responder");
@@ -71,42 +72,85 @@ void setup() {
         }
         Serial.println("mDNS responder started");
 
-        drawCurrentPlaying("The Number of the Beast", "Iron Maiden", "https://i.scdn.co/image/ab67616d000048515c29a88ba5341ca428f0c322", "27000", "12500", "harry_skerritt");
-        //delay(2000);
-
-        //spotifyConnectScreen();
         //Now on WiFi
-        //Check if connected to spotify
-        //  If So then get the track
-        //  If not then auth spotify
 
         //Spotify Get Access Token
+        prefs.begin("spotify-data", false);
+        l_refreshToken = prefs.getString("refreshToken", "");
+        l_tokenExpiryTime = prefs.getLong("expiryTime", 0);
+        l_accessToken = prefs.getString("accessToken", "");
+        prefs.end();
+
+        Serial.println("RT: " + l_refreshToken);
+        Serial.println("AT: " + l_accessToken);
+        Serial.println("ET: " + String(tokenExpiryTime));
+
         //authSpotify();
-  
-        //If this works, then make it get the artist aswell and then start on the display side, and possibly the image
-        //Also add the redirect to a QR code that can be scanned
 
-        // Now get the currently playing track
-       // String track = getCurrentlyPlayingTrack();
-       // if (track != "") {
-       //     Serial.println("Successfully fetched track: " + track);
-       // } else {
-       //     Serial.println("Failed to fetch track.");
-       // };
-
-        
-        
+        //Fix not needing to auth everytime
+        if(l_refreshToken == "" || l_accessToken == ""){
+            //There is no access token (assume not authorised)
+            startupGraphics("Authing Spotify!");
+            authSpotify();
+            setupCompleted = true;
+        } else {
+            //There is a token, best to get a new one.
+            loadSpotifyToken(); //Loads from Preferences
+            delay(500); //Time to breathe
+            getValidAccessToken(); //Check the token is valid -> Refresh always for now
+            startupGraphics("Spotify Connected!");
+            setupCompleted = true;
+        }
     }
     else {
+        //Not Connected to Wifi
         Serial.println("Configportal running");
         captiveGraphics(ssid);
-        //Once Done, Restart
-        //Not Connected to Wifi
+
+        if(wm.getWiFiIsSaved() == true){
+            //Once Done, Restart
+            Serial.println("Wifi Saved is now true");
+        }
     }
 }
 
+unsigned long lastScreenUpdate = 0; //Tracks when the screen was last updated
+const unsigned long updateInterval = 2000; //Time in ms for the screen update delay
+
 void loop() {
     wm.process();
-    //Serial.println("SS: "+wm.getWLStatusString());
-    // put your main code here, to run repeatedly:
+
+    //Checked Constantly
+    //Like Songs
+    like_song_state = digitalRead(LIKE_SONG_PIN);
+    if(like_song_state == LOW){
+        Serial.println("Like Song Button Clicked");
+        if(addCurrentSongToLiked()) {
+            //Song added Successfully do something graphically
+            Serial.println("Song Added Successfully");
+        } else {
+            //Song wasn't added successfully do something graphically
+            Serial.println("Failed to add Song");
+        }
+
+        like_song_state = !like_song_state;  //Move to the function which adds the liked song
+    }
+
+    //Performed every 2 seconsd
+    //The App has correctly initialised
+    if(setupCompleted && (millis() - lastScreenUpdate >= updateInterval)){
+        lastScreenUpdate = millis(); //Update the timestamp
+
+        //Handle The Screen
+        String track = getCurrentlyPlayingTrack();
+        String artist = getCurrentlyPlayingArtist();
+        String albumUrl = getAlbumUrl();
+        int progress = getProgress();
+        int duration = getDuration();
+        bool explicit_song = getExplicitSong();
+
+
+        drawCurrentPlaying(track, artist, albumUrl, progress, duration, explicit_song);     
+        //delay(2000); //Refresh every 2 seconds (Any quicker brings -11 codes?)
+    }
 }
