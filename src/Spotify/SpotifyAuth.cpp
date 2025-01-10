@@ -9,8 +9,8 @@ String refreshToken = "";
 unsigned long tokenExpiryTime = 0; // Expiry time in seconds since epoch
 
 
-const char* clientId = "517041868f9544a0bd757e847ffa3256"; //Remove before any commits -> Use the FILE
-const char* clientSecret = "8e97936b91944a0cb385534884ef83b4"; //Remove before any commits -> Use the FILE
+const char* clientId = "YOUR CLIENT ID"; 
+const char* clientSecret = "YOUR CLIENT SCRET";
 const char* redirectUri = "http://spotify-mate.local/callback";
 const char* scopes = "user-read-currently-playing user-read-playback-state user-modify-playback-state user-library-modify";
 
