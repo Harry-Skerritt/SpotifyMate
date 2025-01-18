@@ -5,6 +5,9 @@
 [![license](https://img.shields.io/npm/l/svelte.svg)](LICENSE) 
 ![PlatformIO Badge](https://img.shields.io/badge/Built_with-PlatformIO-orange) 
 [![ESP32](https://img.shields.io/badge/ESP-32-000000?labelColor=%23CC101F)](https://www.espressif.com/en/products/socs/esp32)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/Harry-Skerritt/SpotifyMate/total)
+
+
 
 
 ## What is SpotifyMate?
